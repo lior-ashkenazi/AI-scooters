@@ -2,4 +2,5 @@ from agents.agent import Agent
 
 
 class DynamicAgent(Agent):
-    pass
+    def __init__(self):
+        pass
