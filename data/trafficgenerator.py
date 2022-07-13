@@ -1,5 +1,6 @@
 from typing import List
 from programio.abstractio import AbstractIO
+from data.trafficdatatypes import *
 
 
 GET_DATA_COMPLEXITY_PROMPT = "Please type data complexity:"
@@ -13,7 +14,7 @@ class TrafficGenerator:
     def __init__(self, io: AbstractIO):
         self.io: AbstractIO = io
 
-    def get_default_data(self) -> List[List]:
+    def get_default_data(self) -> List[Ride]:
         # todo - if we can use python 3.10, use match instead of conditions
         # match complexity:
         #     case TrafficGenerator.LARGE:
@@ -32,7 +33,7 @@ class TrafficGenerator:
         elif complexity == TrafficGenerator.SMALL:
             return []  # todo return small dataset
 
-    def get_custom_data(self) -> List[List]:
+    def get_custom_data(self) -> List[Ride]:
         """
         we assume that we have files that contains:
         - industrial locations (list of coordinates)

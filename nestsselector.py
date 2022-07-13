@@ -1,8 +1,10 @@
 from programio.consoleio import ConsoleIO
+from programio.abstractio import AbstractIO
 from agents.staticagent import StaticAgent
 from agents.dynamicagent import DynamicAgent
 from agents.agentsfactory import AgentsFactory
 from data.trafficgenerator import TrafficGenerator
+from data.trafficdatatypes import *
 from data.featuresdatagenerator import FeaturesDataGenerator
 from typing import List
 
@@ -17,14 +19,14 @@ MIN_NUMBER_OF_SCOOTERS = 1
 MAX_NUMBER_OF_SCOOTERS = float("inf")
 
 
-class ProblemGeneralData:
-    def __init__(self, traffic_data: List[List], n: int, incomes_factor: float,
-                 expenses_factor: float, learning_time: int):
-        self.traffic_data: List[List] = traffic_data  # list of [start time, origin, destination]
-        self.n: int = n  # number of optional nests
-        self.incomes_factor: float = incomes_factor  #  incomes factor
-        self.expenses_factor: float = expenses_factor  #  expenses factor
-        self.learning_time: int = learning_time  # number of seconds to run
+# class ProblemGeneralData:
+#     def __init__(self, traffic_data: List[List], n: int, incomes_factor: float,
+#                  expenses_factor: float, learning_time: int):
+#         self.traffic_data: List[List] = traffic_data  # list of [start time, origin, destination]
+#         self.n: int = n  # number of optional nests
+#         self.incomes_factor: float = incomes_factor
+#         self.expenses_factor: float = expenses_factor
+#         self.learning_time: int = learning_time  # number of seconds to run
 
 
 class NestsSelector:
@@ -33,13 +35,15 @@ class NestsSelector:
     CUSTOM_DATA = "custom"
     DEFAULT_DATA = "default"
 
-    def __init__(self):
-        self.io = ConsoleIO()  # todo - replace with factory for AbstractIO (user chooses which type)
-        self.traffic_generator = TrafficGenerator(self.io)
-        self.features_data_generator = FeaturesDataGenerator(self.io)
+    def __init__(self, io: AbstractIO = ConsoleIO()):
+        self.io = io
+        self.traffic_generator: TrafficGenerator = TrafficGenerator(self.io)
+        self.features_data_generator: FeaturesDataGenerator = \
+            FeaturesDataGenerator(self.io)
 
     def run(self):
-        problem_data: ProblemGeneralData = self._get_general_data()
+        # problem_data: ProblemGeneralData = self._get_general_data()
+        # todo - get relevant data and pass it to the relevant objects (agents\ simulator\ etc)
         problem = self.io.get_user_discrete_choice(GET_PROBLEM_PROMPT,
                                                    [NestsSelector.DYNAMIC,
                                                     NestsSelector.STATIC])
@@ -50,6 +54,7 @@ class NestsSelector:
             self._run_dynamic_problem(problem_data)
 
     def _get_general_data(self) -> ProblemGeneralData:
+        # todo - instead of this function, use it's content for the function above
         traffic_data: List[List] = self._generate_traffic_data()
         n: int = int(self.io.get_user_numerical_choice(GET_NUMBER_OF_SCOOTER_PROMPT,
                                                        MIN_NUMBER_OF_SCOOTERS,
@@ -63,7 +68,7 @@ class NestsSelector:
         return ProblemGeneralData(traffic_data, n, incomes_factor, expenses_factor,
                                   learning_time)
 
-    def _generate_traffic_data(self) -> List[List]:
+    def _generate_traffic_data(self) -> List[Ride]:
         data_type = self.io.get_user_discrete_choice(GET_DATA_PROMPT,
                                                      [NestsSelector.DEFAULT_DATA,
                                                       NestsSelector.CUSTOM_DATA])
@@ -73,31 +78,17 @@ class NestsSelector:
         elif data_type == NestsSelector.CUSTOM_DATA:
             return self.traffic_generator.get_custom_data()
 
-    def _run_static_problem(self, problem_data: ProblemGeneralData):
+    def _run_static_problem(self):
         agent_chosen: str = self.io.get_user_discrete_choice(
             GET_AGENT_PROMPT, AgentsFactory.get_static_agent_legal_values())
         agent: StaticAgent = AgentsFactory.build_static_agent(agent_chosen)
 
         pass
 
-    def _run_dynamic_problem(self, problem_data: ProblemGeneralData):
+    def _run_dynamic_problem(self):
         agent_chosen: str = self.io.get_user_discrete_choice(
             GET_AGENT_PROMPT, AgentsFactory.get_dynamic_agent_legal_values())
         agent: DynamicAgent = AgentsFactory.build_dynamic_agent(agent_chosen)
-        pass
-
-    def _generate_default_data(self) -> List[List]:
-        """
-        proposes to the user few types of default traffic data (by complexity level)
-        :return:
-        """
-        pass
-
-    def _generate_custom_data(self) -> List[List]:
-        """
-
-        :return:
-        """
         pass
 
 
