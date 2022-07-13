@@ -1,10 +1,12 @@
 from typing import List
+from data.trafficdatatypes import *
+
+from data.trafficdatatypes import Point
 from programio.abstractio import AbstractIO
 
 
 class ConsoleIO(AbstractIO):
-    def __init__(self):
-        pass
+
 
     @staticmethod
     def get_user_discrete_choice(prompt: str, choices: List[str]) -> str:
@@ -34,3 +36,19 @@ class ConsoleIO(AbstractIO):
                 print(legal_range_msg)
                 continue
             return choice
+
+    @staticmethod
+    def show_spread(spread_points: List[NestAllocation]):
+        print("scooters spread:")
+        for nest_allocation in spread_points:
+            if nest_allocation.scooters_num > 0:
+                print(nest_allocation)
+
+    @staticmethod
+    def confirm_and_continue():
+        input("Press enter to continue")
+
+    @staticmethod
+    def show_value(message: str, value):
+        print(message)
+        print(value)

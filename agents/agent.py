@@ -22,3 +22,6 @@ class Agent:
     def __init__(self, agent_info: AgentInfo):
         self.agent_info: AgentInfo = agent_info
 
+    def get_agent_info(self):
+        return self.agent_info
+

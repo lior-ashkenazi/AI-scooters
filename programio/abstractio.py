@@ -1,5 +1,6 @@
-from typing import List
+from typing import List, Union
 from abc import abstractmethod
+from data.trafficdatatypes import *
 
 
 class AbstractIO:
@@ -14,3 +15,21 @@ class AbstractIO:
     def get_user_numerical_choice(prompt: str, low_bound: float, high_bound: float)\
             -> float:
         pass
+
+    @staticmethod
+    @abstractmethod
+    def show_spread(spread_points: List[NestAllocation]):
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def confirm_and_continue():
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def show_value(message: str, value):
+        pass
+
+
+
