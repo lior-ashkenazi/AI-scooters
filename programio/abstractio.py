@@ -18,17 +18,17 @@ class AbstractIO:
 
     @staticmethod
     @abstractmethod
-    def show_spread(spread_points: List[NestAllocation]):
+    def show_spread(spread_points: List[NestAllocation]) -> None:
         pass
 
     @staticmethod
     @abstractmethod
-    def confirm_and_continue():
+    def confirm_and_continue() -> None:
         pass
 
     @staticmethod
     @abstractmethod
-    def show_value(message: str, value):
+    def show_value(message: str, value) -> None:
         pass
 
 

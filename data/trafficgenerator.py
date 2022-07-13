@@ -15,14 +15,6 @@ class TrafficGenerator:
         self.io: AbstractIO = io
 
     def get_default_data(self) -> List[Ride]:
-        # todo - if we can use python 3.10, use match instead of conditions
-        # match complexity:
-        #     case TrafficGenerator.LARGE:
-        #         return []  # todo return large dataset
-        #     case TrafficGenerator.MEDIUM:
-        #         return []  # todo return medium dataset
-        #     case TrafficGenerator.SMALL:
-        #         return []  # todo return small dataset
         complexity = self.io.get_user_discrete_choice(
             GET_DATA_COMPLEXITY_PROMPT, TrafficGenerator._get_default_data_options())
 
@@ -44,7 +36,7 @@ class TrafficGenerator:
             - how many Gaussinas to fit (for each type)
             - what is the variance for the Gaussians (with default random values?)
         now, for each location type we have fitted Gaussians.
-        for examples for the industrial locaions we might have 3 Gaussians, for each
+        for examples for the industrial locations we might have 3 Gaussians, for each
         we have the number of original samples that "created it". now, if we want to
         sample an industrial location, we first sample a Gaussian (one of the three,
         randomly, weighted by the number of samples of the Gaussians) and then we
@@ -56,7 +48,7 @@ class TrafficGenerator:
             - destination (same as origin)
             - start time (we will sample from gaussian with expectancy == start time
             - number of samples (that fits to the origin, destination, and start time)
-        :return: all the samples created (list of lists)
+        :return: all the samples created (list of rides)
         """
         pass
 

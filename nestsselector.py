@@ -36,17 +36,15 @@ class NestsSelector:
     def __init__(self, io: AbstractIO = ConsoleIO()):
         self.io = io
         self.traffic_generator: TrafficGenerator = TrafficGenerator(self.io)
-        self.features_data_generator: FeaturesDataGenerator = \
-            FeaturesDataGenerator(self.io)
+        self.features_data_generator: FeaturesDataGenerator = FeaturesDataGenerator(
+            self.io)
 
     def run(self):
-
         potential_rides: List[Ride] = self._generate_traffic_data()
         agent_info: AgentInfo = self._get_agent_info(potential_rides)
         problem = self.io.get_user_discrete_choice(GET_PROBLEM_PROMPT,
                                                    [NestsSelector.DYNAMIC,
                                                     NestsSelector.STATIC])
-
         if problem == NestsSelector.STATIC:
             self._run_static_problem(agent_info)
         elif problem == NestsSelector.DYNAMIC:
@@ -56,10 +54,13 @@ class NestsSelector:
             self._run_dynamic_problem(agent_info, iterations_num)
 
     def _generate_traffic_data(self) -> List[Ride]:
+
+        # get data type - default or custom:
         data_type = self.io.get_user_discrete_choice(GET_DATA_PROMPT,
                                                      [NestsSelector.DEFAULT_DATA,
                                                       NestsSelector.CUSTOM_DATA])
 
+        # return the data requested:
         if data_type == NestsSelector.DEFAULT_DATA:
             return self.traffic_generator.get_default_data()
         elif data_type == NestsSelector.CUSTOM_DATA:
@@ -122,8 +123,7 @@ class NestsSelector:
         self._show_dynamic_results(agent, avg_revenue)
 
     def _show_static_results(self, agent: StaticAgent,
-                            spread_points: List[NestAllocation],
-                            revenue: float):
+                             spread_points: List[NestAllocation], revenue: float):
         self.io.show_value("revenue:", revenue)
         self.io.confirm_and_continue()
         self.io.show_spread(spread_points)
@@ -139,3 +139,8 @@ class NestsSelector:
         # todo - think of how to present the result of the dynamic agent after
         # building the simulator
         pass
+
+
+if __name__ == '__main__':
+    # todo - add parser to select options from onenote
+    pass

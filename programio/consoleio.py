@@ -7,7 +7,6 @@ from programio.abstractio import AbstractIO
 
 class ConsoleIO(AbstractIO):
 
-
     @staticmethod
     def get_user_discrete_choice(prompt: str, choices: List[str]) -> str:
         print(prompt)
@@ -38,17 +37,17 @@ class ConsoleIO(AbstractIO):
             return choice
 
     @staticmethod
-    def show_spread(spread_points: List[NestAllocation]):
+    def show_spread(spread_points: List[NestAllocation]) -> None:
         print("scooters spread:")
         for nest_allocation in spread_points:
             if nest_allocation.scooters_num > 0:
                 print(nest_allocation)
 
     @staticmethod
-    def confirm_and_continue():
+    def confirm_and_continue() -> None:
         input("Press enter to continue")
 
     @staticmethod
-    def show_value(message: str, value):
+    def show_value(message: str, value) -> None:
         print(message)
         print(value)
