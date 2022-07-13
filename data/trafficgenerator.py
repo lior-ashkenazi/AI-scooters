@@ -5,7 +5,7 @@ from programio.abstractio import AbstractIO
 GET_DATA_COMPLEXITY_PROMPT = "Please type data complexity:"
 
 
-class DataGenerator:
+class TrafficGenerator:
     LARGE = "large"
     MEDIUM = "medium"
     SMALL = "small"
@@ -16,20 +16,20 @@ class DataGenerator:
     def get_default_data(self) -> List[List]:
         # todo - if we can use python 3.10, use match instead of conditions
         # match complexity:
-        #     case DataGenerator.LARGE:
+        #     case TrafficGenerator.LARGE:
         #         return []  # todo return large dataset
-        #     case DataGenerator.MEDIUM:
+        #     case TrafficGenerator.MEDIUM:
         #         return []  # todo return medium dataset
-        #     case DataGenerator.SMALL:
+        #     case TrafficGenerator.SMALL:
         #         return []  # todo return small dataset
         complexity = self.io.get_user_discrete_choice(
-            GET_DATA_COMPLEXITY_PROMPT, DataGenerator._get_default_data_options())
+            GET_DATA_COMPLEXITY_PROMPT, TrafficGenerator._get_default_data_options())
 
-        if complexity == DataGenerator.LARGE:
+        if complexity == TrafficGenerator.LARGE:
             return []  # todo return large dataset
-        elif complexity == DataGenerator.MEDIUM:
+        elif complexity == TrafficGenerator.MEDIUM:
             return []  # todo return medium dataset
-        elif complexity == DataGenerator.SMALL:
+        elif complexity == TrafficGenerator.SMALL:
             return []  # todo return small dataset
 
     def get_custom_data(self) -> List[List]:
@@ -61,5 +61,5 @@ class DataGenerator:
 
     @staticmethod
     def _get_default_data_options() -> List[str]:
-        return [DataGenerator.LARGE, DataGenerator.MEDIUM, DataGenerator.SMALL]
+        return [TrafficGenerator.LARGE, TrafficGenerator.MEDIUM, TrafficGenerator.SMALL]
 

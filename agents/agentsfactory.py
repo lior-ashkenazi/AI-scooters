@@ -5,6 +5,7 @@ from agents.staticagents.staticrlagent import StaticRLAgent
 from agents.staticagents.brutefroceagent import BruteForceAgent
 from agents.staticagents.geneticalgorithmagent import GeneticAlgorithmAgent
 from agents.staticagents.simulatedannealingagent import SimulatedAnnealingAgent
+from data.featuresdatagenerator import FeaturesDataGenerator
 from typing import List
 
 
