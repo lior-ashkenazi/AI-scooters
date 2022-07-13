@@ -62,5 +62,17 @@ class TrafficGenerator:
 
     @staticmethod
     def _get_default_data_options() -> List[str]:
-        return [TrafficGenerator.LARGE, TrafficGenerator.MEDIUM, TrafficGenerator.SMALL]
+        return [TrafficGenerator.LARGE, TrafficGenerator.MEDIUM,
+                TrafficGenerator.SMALL]
+
+    @staticmethod
+    def get_random_nests_locations(nests_num) -> List[Point]:
+        """
+        generates random points for optional nests (offered by the Municipality)
+        :param nests_num:
+        :return:
+        """
+        pass
+
+
 

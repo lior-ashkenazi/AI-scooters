@@ -18,7 +18,8 @@ class ConsoleIO(AbstractIO):
             return choice
 
     @staticmethod
-    def get_user_numerical_choice(prompt: str, low_bound, high_bound) -> float:
+    def get_user_numerical_choice(prompt: str, low_bound: float, high_bound: float)\
+            -> float:
         legal_range_msg = f"legal values: in range [{low_bound}, {high_bound}]"
         print(prompt)
         print(legal_range_msg)

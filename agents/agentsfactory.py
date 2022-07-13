@@ -1,3 +1,4 @@
+from agents.agent import AgentInfo
 from agents.dynamicagent import DynamicAgent
 from agents.staticagent import StaticAgent
 from agents.dynamicagents.dynamicrlagent import DynamicRLAgent
@@ -5,7 +6,6 @@ from agents.staticagents.staticrlagent import StaticRLAgent
 from agents.staticagents.brutefroceagent import BruteForceAgent
 from agents.staticagents.geneticalgorithmagent import GeneticAlgorithmAgent
 from agents.staticagents.simulatedannealingagent import SimulatedAnnealingAgent
-from data.featuresdatagenerator import FeaturesDataGenerator
 from typing import List
 
 
@@ -17,37 +17,21 @@ class AgentsFactory:
     AGENT_SIMULATED_ANNEALING = "simulated_annealing"
 
     @staticmethod
-    def build_dynamic_agent(choice: str) -> DynamicAgent:
-        # todo - if we can use python 3.10, use match instead of conditions
-        # match choice:
-        #     case AgentsFactory.AGENT_DYNAMIC_RL:
-        #         return DynamicRLAgent()
-
+    def build_dynamic_agent(choice: str, agent_info: AgentInfo) -> DynamicAgent:
         if choice == AgentsFactory.AGENT_DYNAMIC_RL:
-            return DynamicRLAgent()
+            return DynamicRLAgent(agent_info)
         raise ValueError("no such agent")
 
     @staticmethod
-    def build_static_agent(choice: str) -> StaticAgent:
-        # todo - if we can use python 3.10, use match instead of conditions
-        # match choice:
-        #     case AgentsFactory.AGENT_STATIC_RL:
-        #         return StaticRLAgent()
-        #     case AgentsFactory.AGENT_BRUTEFORCE:
-        #         return BruteForceAgent()
-        #     case AgentsFactory.AGENT_GENETIC_ALGORITHM:
-        #         return GeneticAlgorithmAgent()
-        #     case AgentsFactory.AGENT_SIMULATED_ANNEALING:
-        #         return SimulatedAnnealingAgent()
-
+    def build_static_agent(choice: str, agent_info: AgentInfo) -> StaticAgent:
         if choice == AgentsFactory.AGENT_STATIC_RL:
-            return StaticRLAgent()
+            return StaticRLAgent(agent_info)
         elif choice == AgentsFactory.AGENT_BRUTEFORCE:
-            return BruteForceAgent()
+            return BruteForceAgent(agent_info)
         elif choice == AgentsFactory.AGENT_GENETIC_ALGORITHM:
-            return GeneticAlgorithmAgent()
+            return GeneticAlgorithmAgent(agent_info)
         elif choice == AgentsFactory.AGENT_SIMULATED_ANNEALING:
-            return SimulatedAnnealingAgent()
+            return SimulatedAnnealingAgent(agent_info)
         raise ValueError("no such agent")
 
     @staticmethod

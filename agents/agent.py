@@ -5,7 +5,7 @@ from simulation.trafficsimulator import TrafficSimulator
 from data.trafficdatatypes import *
 
 
-class Agent:
+class AgentInfo:
     def __init__(self, traffic_simulator: TrafficSimulator,
                  incomes_expenses: IncomesExpenses, features_data: FeaturesData,
                  learning_time: int, optional_nests: List[Point],
@@ -16,3 +16,9 @@ class Agent:
         self.learning_time: int = learning_time
         self.optional_nests: List[Point] = optional_nests
         self.scooters_num: int = scooters_num
+
+
+class Agent:
+    def __init__(self, agent_info: AgentInfo):
+        self.agent_info: AgentInfo = agent_info
+
