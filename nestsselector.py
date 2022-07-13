@@ -2,6 +2,8 @@ from programio.consoleio import ConsoleIO
 from agents.staticagent import StaticAgent
 from agents.dynamicagent import DynamicAgent
 from agents.agentsfactory import AgentsFactory
+from data.datagenerator import DataGenerator
+from data.featuresbuilder import FeaturesBuilder
 from typing import List
 
 GET_PROBLEM_PROMPT = "Please type problem to solve from the options below:"
@@ -10,6 +12,7 @@ GET_INCOMES_FACTOR_PROMPT = "Please type incomes factor:"
 GET_EXPENSES_FACTOR_PROMPT = "Please type expenses factor:"
 GET_LEARNING_TIME_PROMPT = "Please type learning time (seconds):"
 GET_AGENT_PROMPT = "Please type agent type:"
+GET_DATA_PROMPT = "Please type data choice:"
 MIN_NUMBER_OF_SCOOTERS = 1
 MAX_NUMBER_OF_SCOOTERS = float("inf")
 
@@ -24,13 +27,16 @@ class ProblemGeneralData:
         self.learning_time: int = learning_time  # number of seconds to run
 
 
-
 class NestsSelector:
     DYNAMIC = "dynamic"
     STATIC = "static"
+    CUSTOM_DATA = "custom"
+    DEFAULT_DATA = "default"
 
     def __init__(self):
         self.io = ConsoleIO()  # todo - replace with factory for AbstractIO (user chooses which type)
+        self.traffic_generator = DataGenerator(self.io)
+        self.features_builder = FeaturesBuilder(self.io)
 
     def run(self):
         problem_data: ProblemGeneralData = self._get_general_data()
@@ -64,7 +70,20 @@ class NestsSelector:
                                   learning_time)
 
     def _generate_traffic_data(self) -> List[List]:
-        pass
+        data_type = self.io.get_user_discrete_choice(GET_DATA_PROMPT,
+                                                     [NestsSelector.DEFAULT_DATA,
+                                                      NestsSelector.CUSTOM_DATA])
+        # todo - if we can use python 3.10, use match instead of conditions
+        # match data_type:
+        #     case NestsSelector.DEFAULT_DATA:
+        #         return self._generate_default_data()
+        #     case NestsSelector.CUSTOM_DATA:
+        #         return self._generate_custom_data()
+        #
+        if data_type == NestsSelector.DEFAULT_DATA:
+            return self.traffic_generator.get_default_data()
+        elif data_type == NestsSelector.CUSTOM_DATA:
+            return self.traffic_generator.get_custom_data()
 
     def _run_static_problem(self, problem_data: ProblemGeneralData):
         agent_chosen: str = self.io.get_user_discrete_choice(
@@ -78,7 +97,19 @@ class NestsSelector:
         agent: DynamicAgent = AgentsFactory.build_dynamic_agent(agent_chosen)
         pass
 
+    def _generate_default_data(self) -> List[List]:
+        """
+        proposes to the user few types of default traffic data (by complexity level)
+        :return:
+        """
+        pass
 
+    def _generate_custom_data(self) -> List[List]:
+        """
+
+        :return:
+        """
+        pass
 
 
 if __name__ == '__main__':
