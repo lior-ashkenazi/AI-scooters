@@ -15,8 +15,11 @@ class TrafficSimulator:
             - list of rides that were completed
             - list of final locations of scooters
         """
+        self._potential_rides.sort(key=lambda ride: ride.start_time)
+        available_scooters: Map = Map()
 
-        pass
+
+
 
     @staticmethod
     def get_scooters_location_from_nests_spread(
