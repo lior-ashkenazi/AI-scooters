@@ -15,6 +15,7 @@ class TrafficSimulator:
             - list of rides that were completed
             - list of final locations of scooters
         """
+
         pass
 
     @staticmethod
