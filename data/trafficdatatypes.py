@@ -2,6 +2,10 @@ import pandas as pd
 from typing import List, Optional
 import numpy as np
 from scipy import spatial
+import ot
+import ot.plot
+import matplotlib.pylab as pl
+
 
 END_TIME = "end_time"
 START_TIME = "start_time"
@@ -103,6 +107,9 @@ class Map:
     def __init__(self, points: np.ndarray):
         self._points: np.ndarray = points
 
+    def get_points(self) -> np.ndarray:
+        return self._points
+
     def add_point(self, point: Point) -> None:
         """
         add point to the map
@@ -133,5 +140,67 @@ class Map:
 
 
 def optimal_transport(src: Map, dest: Map) -> float:
+    xs: np.ndarray = src.get_points()
+    xt: np.ndarray = dest.get_points()
     # todo use POT for implementation
-    pass
+    n = len(xs)
+    a, b = ot.unif(n), ot.unif(n)  # uniform distribution on samples
+    M = ot.dist(xs, xt)
+    M /= M.max()
+    G0 = ot.emd(a, b, M)
+
+    first_arr_indices = np.nonzero(G0)[0]
+    sec_arr_indices = np.nonzero(G0)[1]
+
+    return sum(np.sqrt(np.sum((xs[first_arr_indices] - xt[sec_arr_indices]) ** 2,
+                              axis=1)))
+
+
+if __name__ == '__main__':
+
+    xs = np.array([[3,4], [1.5, 2.5], [4,8]], dtype=float)
+    xt = np.array([[2, 3], [8, 9], [3,9]], dtype=float)
+    n = len(xs)
+    a, b = ot.unif(n), ot.unif(n)  # uniform distribution on samples
+
+    M = ot.dist(xs, xt)
+    M /= M.max()
+    pl.figure(1)
+    pl.plot(xs[:, 0], xs[:, 1], '+b', label='Source samples')
+    pl.plot(xt[:, 0], xt[:, 1], 'xr', label='Target samples')
+    pl.legend(loc=0)
+    pl.title('Source and target distributions')
+    pl.show()
+
+    G0 = ot.emd(a, b, M)
+
+    ot.plot.plot2D_samples_mat(xs, xt, G0, c=[.5, .5, 1])
+    pl.plot(xs[:, 0], xs[:, 1], '+b', label='Source samples')
+    pl.plot(xt[:, 0], xt[:, 1], 'xr', label='Target samples')
+    pl.title('OT matrix with samples')
+    pl.show()
+    # print(np.zG0)
+    print(G0)
+    first_arr_indices = np.nonzero(G0)[0]
+    sec_arr_indices = np.nonzero(G0)[1]
+    print(first_arr_indices)
+    print(sec_arr_indices)
+    print(xs[first_arr_indices])
+    print(xt[sec_arr_indices])
+    ordered_xs = xs[first_arr_indices]
+    ordered_xt = xt[sec_arr_indices]
+    print(ordered_xt - ordered_xs)
+    print((ordered_xt - ordered_xs) ** 2)
+    square_diff = (xs[first_arr_indices] - xt[sec_arr_indices]) ** 2
+    print(square_diff)
+    sum_x_y = np.sum((xs[first_arr_indices] - xt[sec_arr_indices]) ** 2, axis=1)
+    print(sum_x_y)
+    print(np.sqrt(sum_x_y))
+    print(sum(np.sqrt(sum_x_y)))
+    sum(np.sqrt(np.sum((xs[first_arr_indices] - xt[sec_arr_indices]) ** 2, axis=1)))
+
+    m1 = Map(xs)
+    m2 = Map(xt)
+    print(optimal_transport(m1, m2))
+
+
