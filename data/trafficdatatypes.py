@@ -142,7 +142,6 @@ class Map:
 def optimal_transport(src: Map, dest: Map) -> float:
     xs: np.ndarray = src.get_points()
     xt: np.ndarray = dest.get_points()
-    # todo use POT for implementation
     n = len(xs)
     a, b = ot.unif(n), ot.unif(n)  # uniform distribution on samples
     M = ot.dist(xs, xt)
@@ -156,10 +155,10 @@ def optimal_transport(src: Map, dest: Map) -> float:
                               axis=1)))
 
 
-if __name__ == '__main__':
-
-    xs = np.array([[3,4], [1.5, 2.5], [4,8]], dtype=float)
-    xt = np.array([[2, 3], [8, 9], [3,9]], dtype=float)
+def optimal_flow_expample():  # todo - delete after checking
+    # https://pythonot.github.io/auto_examples/others/plot_WeakOT_VS_OT.html#sphx-glr-auto-examples-others-plot-weakot-vs-ot-py
+    xs = np.array([[3, 4], [1.5, 2.5], [4, 8]], dtype=float)
+    xt = np.array([[2, 3], [8, 9], [3, 9]], dtype=float)
     n = len(xs)
     a, b = ot.unif(n), ot.unif(n)  # uniform distribution on samples
 
@@ -202,5 +201,3 @@ if __name__ == '__main__':
     m1 = Map(xs)
     m2 = Map(xt)
     print(optimal_transport(m1, m2))
-
-
