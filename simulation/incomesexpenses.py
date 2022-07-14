@@ -8,12 +8,15 @@ class IncomesExpenses:
         self.incomes_factor: float = incomes_factor
 
     @staticmethod
-    def calc_incomes(all_rides: List[Ride]) -> float:
+    def calc_incomes(rides_complete: List[Ride]) -> float:
         """
         gets all the rides that were completed and return their total length
         """
         # todo - decide if to multiply here by incomes factor, or in revenue method
-        pass
+        total_distance: float = 0.0
+        for ride in rides_complete:
+            total_distance += point_dist(ride.orig, ride.dest)
+        return total_distance
 
     @staticmethod
     def calc_expenses(scooters_locations: Map,
@@ -25,7 +28,7 @@ class IncomesExpenses:
         :return: the optimal flow between the two locations lists
         """
         # todo - decide if to multiply here by expenses factor, or in revenue method
-        pass
+        return optimal_transport(scooters_locations, scooters_in_nests_locations)
 
     def calculate_revenue(self, all_rides:  List[Ride],
                           scooters_locations: Map,

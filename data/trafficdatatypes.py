@@ -27,6 +27,10 @@ class Point:
         return np.array([self.x, self.y])
 
 
+def point_dist(a: Point, b: Point) -> float:
+    return np.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2)
+
+
 def point_from_numpy(arr: np.ndarray) -> Point:
     return Point(arr[0], arr[1])
 
@@ -127,3 +131,9 @@ class Map:
         selected_point: Point = point_from_numpy(self._points[index])
         self._points = np.delete(self._points, index, axis=0)
         return selected_point
+
+
+def optimal_transport(src: Map, dest: Map) -> float:
+    # todo complete
+    return 0
+
