@@ -3,7 +3,6 @@ from typing import List, Optional
 import numpy as np
 from scipy import spatial
 
-
 END_TIME = "end_time"
 START_TIME = "start_time"
 DEST_Y = "dest_y"
@@ -134,6 +133,5 @@ class Map:
 
 
 def optimal_transport(src: Map, dest: Map) -> float:
-    # todo complete
-    return 0
-
+    # todo use POT for implementation
+    pass
