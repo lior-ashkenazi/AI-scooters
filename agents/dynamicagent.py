@@ -8,6 +8,11 @@ class DynamicAgent(Agent):
 
     @abstractmethod
     def learn(self) -> None:
+        """
+        use data from self.agent_info (inherited from class Agent) to use data in
+        order to learn
+        :return:
+        """
         pass
 
     def get_average_revenue(self, iterations_num) -> float:
@@ -36,6 +41,11 @@ class DynamicAgent(Agent):
 
     @abstractmethod
     def get_spread_points(self, scooters_locations: Map) -> List[NestAllocation]:
+        """
+        after learning - given current scooters location, choose nest allocation
+        :param scooters_locations: map of scooters location
+        :return: the nest allocation
+        """
         pass
 
     @abstractmethod

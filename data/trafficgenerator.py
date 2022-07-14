@@ -3,6 +3,8 @@ from data.trafficdatatypes import *
 
 
 GET_DATA_COMPLEXITY_PROMPT = "Please type data complexity:"
+INDUSTRIAL_LOCATIONS_PATH = ""  # todo - download some data
+RESIDENTIAL_LOCATIONS_PATH = ""  # todo - download some data
 
 
 class TrafficGenerator:
