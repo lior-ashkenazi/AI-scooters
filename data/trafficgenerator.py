@@ -1,4 +1,3 @@
-from typing import List
 from programio.abstractio import AbstractIO
 from data.trafficdatatypes import *
 
@@ -44,7 +43,7 @@ class TrafficGenerator:
         so the next step is to get from the user:
         2. Which traffic samples to create and how many:
             list of lists that each one contains:
-            - origin type to sample from (industrial\ residential\ ...)
+            - origin type to sample from (industrial or residential...)
             - destination (same as origin)
             - start time (we will sample from gaussian with expectancy == start time
             - number of samples (that fits to the origin, destination, and start time)
@@ -65,6 +64,3 @@ class TrafficGenerator:
         :return:
         """
         pass
-
-
-

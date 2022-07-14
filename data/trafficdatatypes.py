@@ -1,5 +1,8 @@
 import pandas as pd
-from typing import List
+from typing import List, Optional
+import numpy as np
+from scipy import spatial
+
 
 END_TIME = "end_time"
 START_TIME = "start_time"
@@ -20,6 +23,20 @@ class Point:
     def __repr__(self):
         return str(self)
 
+    def to_numpy(self) -> np.ndarray:
+        return np.array([self.x, self.y])
+
+
+def point_from_numpy(arr: np.ndarray) -> Point:
+    return Point(arr[0], arr[1])
+
+
+def point_list_to_numpy(point_list: List[Point]) -> np.ndarray:
+    arr = []
+    for point in point_list:
+        arr.append([point.x, point.y])
+    return np.array(arr)
+
 
 class Ride:
     def __init__(self, orig: Point, dest: Point, start_time: int, end_time: int):
@@ -34,6 +51,9 @@ class Ride:
 
     def __repr__(self):
         return str(self)
+
+    def __lt__(self, other):
+        return self.end_time < other.end_time
 
 
 def rides_list_to_pd(rides: List[Ride]) -> pd.DataFrame:
@@ -77,14 +97,33 @@ class NestAllocation:
 
 
 class Map:
-    pass
+    def __init__(self, points: np.ndarray):
+        self._points: np.ndarray = points
 
+    def add_point(self, point: Point) -> None:
+        """
+        add point to the map
+        :param point: new point to add
+        :return: None
+        """
+        self._points = np.vstack([self._points, point.to_numpy()])
 
-if __name__ == '__main__':
-    a: Ride = Ride(Point(2.3,4.5), Point(2,4), 1, 4)
-    b: Ride = Ride(Point(4,6), Point(4,6), 5, 3)
-    c: List[Ride] = [b, a]
-    print(c)
-    d = rides_list_to_pd(c)
-    print(d)
-    print(pd_to_rides_list(d))
+    def pop_nearest_point_in_radius(self, location: Point,
+                                    radius: float) -> Optional[Point]:
+        """
+        given points search for the nearest neighbor, and if it is closer that
+        the radius given, return the neighbor and remove it from the map
+        :param location: location to search nearest point
+        :param radius: distance to search nearest point
+        :return: if there exists nearest point in the radius specified, return this
+            point and pop it. Else, return None
+        """
+        if self._points.size == 0:
+            return None
+
+        distance, index = spatial.KDTree(self._points).query(location.to_numpy())
+        if distance > radius:
+            return None
+        selected_point: Point = point_from_numpy(self._points[index])
+        self._points = np.delete(self._points, index, axis=0)
+        return selected_point

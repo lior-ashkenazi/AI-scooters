@@ -13,4 +13,3 @@ class GraphicIO(AbstractIO):
     @staticmethod
     def get_user_numerical_choice(prompt: str, low_bound, high_bound) -> float:
         pass
-

@@ -8,4 +8,3 @@ class MinExpensesAgent(DynamicAgent):
     voted for this nest
     """
     pass
-

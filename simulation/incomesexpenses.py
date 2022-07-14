@@ -1,4 +1,3 @@
-from typing import List
 from data.trafficdatatypes import *
 
 
@@ -17,8 +16,8 @@ class IncomesExpenses:
         pass
 
     @staticmethod
-    def calc_expenses(scooters_locations: List[Point],
-                      scooters_in_nests_locations: List[Point]) -> float:
+    def calc_expenses(scooters_locations: Map,
+                      scooters_in_nests_locations: Map) -> float:
         """
         computes optimal transport:
         :param scooters_locations: the scooters' locations at the end of the day
@@ -29,8 +28,8 @@ class IncomesExpenses:
         pass
 
     def calculate_revenue(self, all_rides:  List[Ride],
-                          scooters_locations: List[Point],
-                          scooters_in_nests_locations: List[Point]) -> float:
+                          scooters_locations: Map,
+                          scooters_in_nests_locations: Map) -> float:
         """
         calculates the revenue - the difference between the incomes and the expneses
         (considering the factors that were received in the init)
@@ -42,5 +41,3 @@ class IncomesExpenses:
         return self.incomes_factor * self.calc_incomes(all_rides) - self.\
             expenses_factor * self.calc_expenses(scooters_locations,
                                                  scooters_in_nests_locations)
-
-

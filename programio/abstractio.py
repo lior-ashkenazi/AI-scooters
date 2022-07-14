@@ -1,4 +1,3 @@
-from typing import List, Union
 from abc import abstractmethod
 from data.trafficdatatypes import *
 
@@ -30,6 +29,3 @@ class AbstractIO:
     @abstractmethod
     def show_value(message: str, value) -> None:
         pass
-
-
-

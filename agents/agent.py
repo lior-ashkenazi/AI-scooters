@@ -1,4 +1,3 @@
-from typing import List
 from data.featuresdatagenerator import FeaturesData
 from simulation.incomesexpenses import IncomesExpenses
 from simulation.trafficsimulator import TrafficSimulator
@@ -24,4 +23,3 @@ class Agent:
 
     def get_agent_info(self):
         return self.agent_info
-

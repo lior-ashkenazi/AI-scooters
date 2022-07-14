@@ -1,6 +1,6 @@
 from agents.agent import Agent
 from abc import abstractmethod
-from typing import List, Tuple
+from typing import Tuple
 from data.trafficdatatypes import *
 
 
@@ -12,5 +12,3 @@ class StaticAgent(Agent):
         :return: list of nest allocations and the revenue
         """
         pass
-
-

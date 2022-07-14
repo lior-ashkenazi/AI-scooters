@@ -1,7 +1,4 @@
-from typing import List
 from data.trafficdatatypes import *
-
-from data.trafficdatatypes import Point
 from programio.abstractio import AbstractIO
 
 

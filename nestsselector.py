@@ -9,7 +9,7 @@ from data.trafficdatatypes import *
 from data.featuresdatagenerator import FeaturesDataGenerator, FeaturesData
 from simulation.trafficsimulator import TrafficSimulator
 from simulation.incomesexpenses import IncomesExpenses
-from typing import List, Union, Tuple
+from typing import List, Tuple
 
 GET_PROBLEM_PROMPT = "Please type problem to solve from the options below:"
 GET_NUMBER_OF_SCOOTER_PROMPT = "Please type number of scooters available:"
@@ -25,6 +25,9 @@ MIN_NUMBER_OF_SCOOTERS = 1
 MAX_NUMBER_OF_SCOOTERS = float("inf")
 MIN_NUMBER_OF_NESTS = 1
 MAX_NUMBER_OF_NESTS = float("inf")
+SEARCH_RADIUS = 40  # todo - get this value as an input? what value to assign?
+                    # this value should represent the radius in terms of euqlidian
+                    #  distance in x,y coordinates of the map (not meters)
 
 
 class NestsSelector:
@@ -68,7 +71,8 @@ class NestsSelector:
 
     def _get_agent_info(self, potential_rides: List[Ride]):
 
-        traffic_simulator: TrafficSimulator = TrafficSimulator(potential_rides)
+        traffic_simulator: TrafficSimulator = TrafficSimulator(potential_rides,
+                                                               SEARCH_RADIUS)
         incomes_factor: float = self.io.get_user_numerical_choice(
             GET_INCOMES_FACTOR_PROMPT, 0, float("inf"))
         expenses_factor: float = self.io.get_user_numerical_choice(

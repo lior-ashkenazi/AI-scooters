@@ -43,4 +43,3 @@ class AgentsFactory:
     @staticmethod
     def get_dynamic_agent_legal_values() -> List[str]:
         return [AgentsFactory.AGENT_DYNAMIC_RL]
-

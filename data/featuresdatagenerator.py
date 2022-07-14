@@ -13,8 +13,8 @@ class FeaturesDataGenerator:
     it should interact with the user in order to get features for the user.
     we assume that we have a file that contains data that we can use in order to
      create features.
-    this class should operate similar to TrafficGenerator, to get requests from the user
-    and return the requested features (that's why it has io attribute)
+    this class should operate similar to TrafficGenerator, to get requests from the
+    user and return the requested features (that's why it has io attribute)
     we should decide what is the type of the features to return  (implementation of
      FeaturesData)
     """
@@ -23,7 +23,3 @@ class FeaturesDataGenerator:
 
     def generate_features_data(self) -> FeaturesData:
         pass
-
-
-
-
