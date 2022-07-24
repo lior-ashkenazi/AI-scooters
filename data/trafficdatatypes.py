@@ -5,7 +5,7 @@ from scipy import spatial
 import ot
 import ot.plot
 import matplotlib.pylab as pl
-
+import datetime
 
 END_TIME = "end_time"
 START_TIME = "start_time"
@@ -46,11 +46,15 @@ def point_list_to_numpy(point_list: List[Point]) -> np.ndarray:
 
 
 class Ride:
-    def __init__(self, orig: Point, dest: Point, start_time: int, end_time: int):
+    def __init__(self,
+                 orig: Point,
+                 dest: Point,
+                 start_time: datetime.time,
+                 end_time: datetime.time):
         self.orig: Point = orig
         self.dest: Point = dest
-        self.start_time: int = start_time
-        self.end_time: int = end_time
+        self.start_time: datetime.time = start_time
+        self.end_time: datetime.time = end_time
 
     def __str__(self):
         return f"\norig: {self.orig}, dest: {self.dest}\n" \

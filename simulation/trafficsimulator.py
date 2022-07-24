@@ -25,6 +25,7 @@ class TrafficSimulator:
 
         for ride in self._potential_rides:
 
+            # TODO change to datetime.time
             # return scooters that finish ride to available scooters
             cur_time: int = ride.start_time
             TrafficSimulator.finish_rides(available_scooters, unavailable_scooters,

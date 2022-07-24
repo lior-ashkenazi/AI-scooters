@@ -26,7 +26,7 @@ MAX_NUMBER_OF_SCOOTERS = float("inf")
 MIN_NUMBER_OF_NESTS = 1
 MAX_NUMBER_OF_NESTS = float("inf")
 SEARCH_RADIUS = 40  # todo - get this value as an input? what value to assign?
-                    # this value should represent the radius in terms of euqlidian
+                    # this value should represent the radius in terms of euclidian
                     #  distance in x,y coordinates of the map (not meters)
 
 
