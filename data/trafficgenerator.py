@@ -4,10 +4,10 @@ from data.trafficdatatypes import *
 
 from typing import Tuple
 
+from enum import Enum
 import datetime
-import random
 
-from data.config import *
+import data.config as config
 
 GET_DATA_COMPLEXITY_PROMPT = "Please type data complexity:"
 INDUSTRIAL_LOCATIONS_PATH = ""  # todo - download some data
@@ -21,6 +21,28 @@ class TrafficGenerator:
 
     def __init__(self, io: AbstractIO):
         self.io: AbstractIO = io
+
+    class DayPart(Enum):
+        MORNING: int = 1
+        AFTERNOON: int = 2
+        EVENING: int = 3
+
+    class Zone(Enum):
+        RESIDENTIAL: int = 1
+        INDUSTRIAL: int = 2
+        COMMERCIAL: int = 3
+
+    class RideType(Enum):
+        RESIDENTIAL_TO_INDUSTRIAL: int = 1
+        INDUSTRIAL_TO_RESIDENTIAL: int = 2
+        RESIDENTIAL_TO_COMMERCIAL: int = 3
+        COMMERCIAL_TO_RESIDENTIAL: int = 4
+
+    class District(Enum):
+        DISTRICT_3: int = 3
+        DISTRICT_4: int = 4
+        DISTRICT_5: int = 5
+        DISTRICT_6: int = 6
 
     def get_default_data(self) -> List[Ride]:
         complexity = self.io.get_user_discrete_choice(
@@ -58,65 +80,61 @@ class TrafficGenerator:
             - number of samples (that fits to the origin, destination, and start time)
         :return: all the samples created (list of rides)
         """
-        # TODO day_part should be enum
         rides = []
-        for day_part in [1, 2, 3]:
+        for day_part in [day_part.value for day_part in TrafficGenerator.DayPart]:
             rides.extend(TrafficGenerator._generate_rides_day_part(day_part))
         return rides
 
     @staticmethod
-    def _generate_rides_day_part(day_part : int) -> List[Ride]:
+    def _generate_rides_day_part(day_part: int) -> List[Ride]:
         # TODO later we can compute the end-time by the distance * constant (maybe something
         #  more complicated than that
-        # TODO write in config the probability vectors we assign to each hour, namely what type
-        #  of a ride we sample in each time-part of the day
         # TODO maybe TrafficGenerator should have Enum class for zone type
         rides = []
         samples_num = 10
         for i in range(samples_num):
-            start_time = TrafficGenerator.\
-                _generate_start_time(*data.config.day_parts_hours_prob[day_part])
-            ride_type = TrafficGenerator.\
-                _draw_ride_type(data.config.day_part_rides_prob[day_part])
-            end_time = TrafficGenerator.\
-                _generate_end_time(start_time,*data.config.day_parts_hours_prob[day_part])
+            start_time = TrafficGenerator. \
+                _generate_start_time(*config.day_parts_hours_prob[day_part])
+            ride_type = TrafficGenerator. \
+                _draw_ride_type(config.day_part_rides_prob[day_part])
+            end_time = TrafficGenerator. \
+                _generate_end_time(start_time, *config.day_parts_hours_prob[day_part])
 
-            orig, dest = data.config.ride_type_to_district_types[ride_type]
+            orig, dest = data.config.ride_type_to_zones[ride_type]
 
-            ride = Ride(
-                Point(*TrafficGenerator._sample_coordinates(orig)),
-                Point(*TrafficGenerator._sample_coordinates(dest)),
-                start_time,
-                end_time)
+            ride = Ride(Point(*TrafficGenerator._sample_coordinates(orig)),
+                        Point(*TrafficGenerator._sample_coordinates(dest)),
+                        start_time,
+                        end_time)
 
             rides.append(ride)
 
         return rides
 
-    # TODO TrafficGenerator should have Enum class for part of day
     @staticmethod
     def _generate_start_time(hour_mean, hour_variance):
-        return datetime.time(hour=np.random.normal(hour_mean, hour_variance),
+        return datetime.time(hour=round(np.random.normal(hour_mean, hour_variance)),
                              minute=np.random.randint(0, 59)).replace(second=0, microsecond=0)
 
-    # TODO maybe TrafficGenerator should have Enum class for part of day
     @staticmethod
     def _draw_ride_type(hour_prob_vec):
-        return np.random.choice(4, p=hour_prob_vec) + 1
+        return np.random.choice([ride_type.value for ride_type in TrafficGenerator.RideType],
+                                p=hour_prob_vec)
 
     # TODO change for more complicated computation based on distance and speed
     @staticmethod
     def _generate_end_time(start_time, hour_mean, hour_variance):
         while True:
-            end_time = datetime.time(hour=np.random.normal(hour_mean, hour_variance),
+            end_time = datetime.time(hour=round(np.random.normal(hour_mean, hour_variance)),
                                      minute=np.random.randint(0, 59)).replace(second=0,
-                                                                             microsecond=0)
+                                                                              microsecond=0)
             if start_time < end_time:
                 return end_time
 
     @staticmethod
     def _sample_coordinates(zone_type: int) -> Tuple[float, float]:
-        district = np.random.choice(4, p=data.config.zone_type_probabilities[zone_type]) + 3
+        district = np.random.choice([district.value for district in TrafficGenerator.District]
+                                    , p=data.config.zone_type_probabilities[zone_type])
         mean, std = data.config.district_probabilities[district]
         # x is longitude and y latitude
         x, y = np.random.multivariate_normal(mean, std)
@@ -124,10 +142,9 @@ class TrafficGenerator:
 
     @staticmethod
     def _get_default_data_options() -> List[str]:
-        return [TrafficGenerator.LARGE, TrafficGenerator.MEDIUM,
-                TrafficGenerator.SMALL]
+        return [TrafficGenerator.LARGE, TrafficGenerator.MEDIUM, TrafficGenerator.SMALL]
 
-    @staticmethod
+
     def get_random_nests_locations(nests_num) -> List[Point]:
         """
         generates random points for optional nests (offered by the Municipality)

@@ -40,10 +40,12 @@ MORNING_HOUR_RIDES_PROB = [0.6, 0.15, 0.1, 0.15]
 AFTERNOON_HOUR_RIDES_PROB = [0.25, 0.5, 0.1, 0.15]
 EVENING_HOUR_RIDES_PROB = [0.15, 0.15, 0.6, 0.1]
 
-day_parts_hours_prob = {1: (8, 1.5), 2: (16, 1.5), 3: (20, 1.5)}
+day_parts_hours_prob = {1: (MORNING_HOUR_MEAN, HOUR_VARIANCE),
+                        2: (AFTERNOON_HOUR_MEAN, HOUR_VARIANCE),
+                        3: (EVENING_HOUR_MEAN, HOUR_VARIANCE)}
 
 day_part_rides_prob = {1: [0.6, 0.15, 0.1, 0.15],
                        2: [0.25, 0.5, 0.1, 0.15],
                        3: [0.15, 0.15, 0.6, 0.1]}
 
-ride_type_to_district_types = {1: (1, 2), 2: (2, 1), 3: (1, 3), 4: (3, 1)}
+ride_type_to_zones = {1: (1, 2), 2: (2, 1), 3: (1, 3), 4: (3, 1)}

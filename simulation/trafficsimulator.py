@@ -67,7 +67,7 @@ class TrafficSimulator:
     def get_scooters_location_from_nests_spread(
             nests_spread: List[NestAllocation]) -> Map:
         """
-        gets the location of the scooters given the list of the nest locations
+        gets the location of the scooters given the list of the nest allocations
         """
         result = []
         for nest_allocation in nests_spread:
