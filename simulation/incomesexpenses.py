@@ -30,7 +30,8 @@ class IncomesExpenses:
         # todo - decide if to multiply here by expenses factor, or in revenue method
         return optimal_transport(scooters_locations, scooters_in_nests_locations)
 
-    def calculate_revenue(self, all_rides:  List[Ride],
+    def calculate_revenue(self,
+                          all_rides:  List[Ride],
                           scooters_locations: Map,
                           scooters_in_nests_locations: Map) -> float:
         """

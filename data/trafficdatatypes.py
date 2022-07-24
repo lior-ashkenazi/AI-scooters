@@ -111,6 +111,9 @@ class Map:
     def __init__(self, points: np.ndarray):
         self._points: np.ndarray = points
 
+    def __getitem__(self, item):
+        return self._points[item]
+
     def get_points(self) -> np.ndarray:
         return self._points
 

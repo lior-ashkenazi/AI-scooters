@@ -1,7 +1,10 @@
+import numpy as np
+
 from agents.agent import Agent
 from abc import abstractmethod
 from typing import Tuple
 from data.trafficdatatypes import *
+from data.trafficgenerator import TrafficGenerator
 
 
 class DynamicAgent(Agent):
@@ -19,9 +22,8 @@ class DynamicAgent(Agent):
         total_revenue = 0.0
         cur_locations: Map = self.get_start_state()
         for i in range(iterations_num):
-
             # get simulation results - rides completed and scooters final location:
-            result: Tuple[List[Ride], Map] = self.agent_info.\
+            result: Tuple[List[Ride], Map] = self.agent_info. \
                 traffic_simulator.get_simulation_result(cur_locations)
             rides_completed: List[Ride] = result[0]
             end_day_scooters_locations: Map = result[1]
@@ -29,7 +31,7 @@ class DynamicAgent(Agent):
             # get the destination map
             cur_spread: List[NestAllocation] = self.get_spread_points(
                 end_day_scooters_locations)
-            destination_locations: Map = self.agent_info.traffic_simulator.\
+            destination_locations: Map = self.agent_info.traffic_simulator. \
                 get_scooters_location_from_nests_spread(cur_spread)
 
             # compute revenue
@@ -48,9 +50,3 @@ class DynamicAgent(Agent):
         """
         pass
 
-    @abstractmethod
-    def get_start_state(self) -> Map:
-        """
-        gets scooters initial points
-        """
-        pass

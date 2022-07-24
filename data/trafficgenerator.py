@@ -144,11 +144,23 @@ class TrafficGenerator:
     def _get_default_data_options() -> List[str]:
         return [TrafficGenerator.LARGE, TrafficGenerator.MEDIUM, TrafficGenerator.SMALL]
 
-
-    def get_random_nests_locations(nests_num) -> List[Point]:
+    def get_random_nests_locations(self, nests_num) -> List[Point]:
         """
         generates random points for optional nests (offered by the Municipality)
         :param nests_num:
         :return:
         """
-        pass
+        return [Point(x, y) for x, y in
+                np.random.multivariate_normal(config.DISTRICT_ALL_MEAN,
+                                              config.DISTRICT_ALL_COV,
+                                              nests_num)]
+
+    @staticmethod
+    def get_coordinates_bins(bins_num) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        return bins for longitude and latitude
+        :param::
+        """
+        binx = np.linspace(config.MIN_LONGITUDE, config.MAX_LONGITUDE, bins_num + 1)
+        biny = np.linspace(config.MIN_LATITUDE, config.MAX_LATITUDE, bins_num + 1)
+        return binx, biny
