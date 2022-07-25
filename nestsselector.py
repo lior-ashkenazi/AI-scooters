@@ -1,15 +1,22 @@
-from programio.consoleio import ConsoleIO
 from programio.abstractio import AbstractIO
+from programio.consoleio import ConsoleIO
+from programio.graphicalio import GraphicIO
+
 from agents.agent import AgentInfo
 from agents.staticagent import StaticAgent
 from agents.dynamicagent import DynamicAgent
 from agents.agentsfactory import AgentsFactory
+
 from data.trafficgenerator import TrafficGenerator
 from data.trafficdatatypes import *
 from data.featuresdatagenerator import FeaturesDataGenerator, FeaturesData
+
 from simulation.trafficsimulator import TrafficSimulator
 from simulation.incomesexpenses import IncomesExpenses
+
 from typing import List, Tuple
+
+import argparse
 
 GET_PROBLEM_PROMPT = "Please type problem to solve from the options below:"
 GET_NUMBER_OF_SCOOTER_PROMPT = "Please type number of scooters available:"
@@ -45,12 +52,10 @@ class NestsSelector:
     def run(self):
         potential_rides: List[Ride] = self._generate_traffic_data()
         agent_info: AgentInfo = self._get_agent_info(potential_rides)
-        problem = self.io.get_user_discrete_choice(GET_PROBLEM_PROMPT,
-                                                   [NestsSelector.DYNAMIC,
-                                                    NestsSelector.STATIC])
-        if problem == NestsSelector.STATIC:
+
+        if args.agent == NestsSelector.STATIC:
             self._run_static_problem(agent_info)
-        elif problem == NestsSelector.DYNAMIC:
+        elif args.agent == NestsSelector.DYNAMIC:
             iterations_num: int = int(
                 self.io.get_user_numerical_choice(
                     GET_ITERATIONS_NUMBER_DYNAMIC_RUN_PROMPT, 0, float("inf")))
@@ -146,5 +151,21 @@ class NestsSelector:
 
 
 if __name__ == '__main__':
-    # todo - add parser to select options from onenote
-    pass
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-i",
+                        "--io",
+                        default='c',
+                        help="The input/output interface of the program",
+                        choices=["c", "console", "g", "graphical"],
+                        required=True)
+    parser.add_argument("-a",
+                        "--agent",
+                        default='d',
+                        help="The type of agent",
+                        choices=["d", "dynamic", "s", "static"],
+                        required=True
+                        )
+    args = parser.parse_args()
+    io = GraphicIO() if args.io in ["g", "graphical"] else ConsoleIO()
+    ns = NestsSelector()
+    ns.run()
