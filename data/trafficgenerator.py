@@ -15,7 +15,7 @@ GET_DEFAULT_DATA_COMPLEXITY_PROMPT = "Please type data complexity:"
 INDUSTRIAL_LOCATIONS_PATH = ""  # todo - download some data
 RESIDENTIAL_LOCATIONS_PATH = ""  # todo - download some data
 
-GET_CUSTOM_DATA_SAMPLES_NUMBER = "Please type data samples number:"
+GET_CUSTOM_DATA_SAMPLES_NUMBER = "Please type data samples number (for each day part):"
 
 
 class TrafficGenerator:
@@ -122,8 +122,9 @@ class TrafficGenerator:
 
     @staticmethod
     def _generate_start_time(hour_mean, hour_variance):
-        return datetime.time(hour=round(np.random.normal(hour_mean, hour_variance)),
-                             minute=np.random.randint(0, 59)).replace(second=0, microsecond=0)
+        return datetime.time(
+            hour=TrafficGenerator._sample_hour_normal_distribution(hour_mean, hour_variance),
+            minute=np.random.randint(0, 59)).replace(second=0, microsecond=0)
 
     @staticmethod
     def _draw_ride_type(hour_prob_vec):
@@ -134,11 +135,18 @@ class TrafficGenerator:
     @staticmethod
     def _generate_end_time(start_time, hour_mean, hour_variance):
         while True:
-            end_time = datetime.time(hour=round(np.random.normal(hour_mean, hour_variance)),
-                                     minute=np.random.randint(0, 59)).replace(second=0,
-                                                                              microsecond=0)
+            end_time = datetime.time(
+                hour=TrafficGenerator._sample_hour_normal_distribution(hour_mean, hour_variance),
+                minute=np.random.randint(0, 59)).replace(second=0, microsecond=0)
             if start_time < end_time:
                 return end_time
+
+    @staticmethod
+    def _sample_hour_normal_distribution(hour_mean, hour_variance):
+        while True:
+            hour = round(np.random.normal(hour_mean, hour_variance))
+            if hour < 24:
+                return hour
 
     @staticmethod
     def _sample_coordinates(zone_type: int) -> Tuple[float, float]:

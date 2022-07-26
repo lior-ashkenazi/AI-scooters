@@ -25,7 +25,7 @@ GET_INCOMES_FACTOR_PROMPT = "Please type incomes factor:"
 GET_EXPENSES_FACTOR_PROMPT = "Please type expenses factor:"
 GET_LEARNING_TIME_PROMPT = "Please type learning time (seconds):"
 GET_ITERATIONS_NUMBER_DYNAMIC_RUN_PROMPT = "Please enter number of iterations to run" \
-                                           "in the end of the learning process:"
+                                           " in the end of the learning process:"
 GET_AGENT_PROMPT = "Please type agent type:"
 GET_DATA_PROMPT = "Please type data choice:"
 MIN_NUMBER_OF_SCOOTERS = 1

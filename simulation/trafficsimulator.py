@@ -1,6 +1,7 @@
 from typing import Tuple
 from data.trafficdatatypes import *
 from queue import PriorityQueue
+import datetime
 
 
 class TrafficSimulator:
@@ -24,9 +25,8 @@ class TrafficSimulator:
         rides_performed: List[Ride] = []
 
         for ride in self._potential_rides:
-            # TODO change to datetime.time
             # return scooters that finish ride to available scooters
-            cur_time: int = ride.start_time
+            cur_time: datetime.time = ride.start_time
             TrafficSimulator.finish_rides(available_scooters, unavailable_scooters,
                                           cur_time)
 
@@ -51,7 +51,7 @@ class TrafficSimulator:
 
     @staticmethod
     def finish_rides(available_scooters: Map, unavailable_scooters: PriorityQueue,
-                     cur_time: int) -> None:
+                     cur_time: datetime.time) -> None:
         while unavailable_scooters.qsize() > 0:
             next_ride: Ride = unavailable_scooters.get()
             # if end time is smaller than current time, scooter is available again

@@ -138,7 +138,8 @@ class Map:
         if self._points.size == 0:
             return None
 
-        distance, index = spatial.KDTree(self._points).query(location.to_numpy())
+        kd_tree = spatial.KDTree(self._points)
+        distance, index = kd_tree.query(location.to_numpy())
         if distance > radius:
             return None
         selected_point: Point = point_from_numpy(self._points[index])

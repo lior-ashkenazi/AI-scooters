@@ -54,4 +54,4 @@ class DynamicAgent(Agent):
         """
         returns the initial randomized points of the nests
         """
-        return Map(self.agent_info.optional_nests)
+        return Map(np.array(self.agent_info.optional_nests))
