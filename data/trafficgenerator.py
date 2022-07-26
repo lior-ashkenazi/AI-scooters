@@ -9,9 +9,13 @@ import datetime
 
 import data.config as config
 
-GET_DATA_COMPLEXITY_PROMPT = "Please type data complexity:"
+import numpy as np
+
+GET_DEFAULT_DATA_COMPLEXITY_PROMPT = "Please type data complexity:"
 INDUSTRIAL_LOCATIONS_PATH = ""  # todo - download some data
 RESIDENTIAL_LOCATIONS_PATH = ""  # todo - download some data
+
+GET_CUSTOM_DATA_SAMPLES_NUMBER = "Please type data samples number:"
 
 
 class TrafficGenerator:
@@ -46,7 +50,7 @@ class TrafficGenerator:
 
     def get_default_data(self) -> List[Ride]:
         complexity = self.io.get_user_discrete_choice(
-            GET_DATA_COMPLEXITY_PROMPT, TrafficGenerator._get_default_data_options())
+            GET_DEFAULT_DATA_COMPLEXITY_PROMPT, TrafficGenerator._get_default_data_options())
 
         if complexity == TrafficGenerator.LARGE:
             return []  # todo return large dataset
@@ -54,6 +58,10 @@ class TrafficGenerator:
             return []  # todo return medium dataset
         elif complexity == TrafficGenerator.SMALL:
             return []  # todo return small dataset
+
+    @staticmethod
+    def _get_default_data_options() -> List[str]:
+        return [TrafficGenerator.LARGE, TrafficGenerator.MEDIUM, TrafficGenerator.SMALL]
 
     def get_custom_data(self) -> List[Ride]:
         """
@@ -80,18 +88,19 @@ class TrafficGenerator:
             - number of samples (that fits to the origin, destination, and start time)
         :return: all the samples created (list of rides)
         """
+        samples_num = int(self.io.get_user_numerical_choice(GET_CUSTOM_DATA_SAMPLES_NUMBER,
+                                                            0, float("inf")))
+
         rides = []
         for day_part in [day_part.value for day_part in TrafficGenerator.DayPart]:
-            rides.extend(TrafficGenerator._generate_rides_day_part(day_part))
+            rides.extend(TrafficGenerator._generate_rides_day_part(day_part, samples_num))
         return rides
 
     @staticmethod
-    def _generate_rides_day_part(day_part: int) -> List[Ride]:
+    def _generate_rides_day_part(day_part: int, samples_num: int) -> List[Ride]:
         # TODO later we can compute the end-time by the distance * constant (maybe something
         #  more complicated than that
-        # TODO maybe TrafficGenerator should have Enum class for zone type
         rides = []
-        samples_num = 10
         for i in range(samples_num):
             start_time = TrafficGenerator. \
                 _generate_start_time(*config.day_parts_hours_prob[day_part])
@@ -139,10 +148,6 @@ class TrafficGenerator:
         # x is longitude and y latitude
         x, y = np.random.multivariate_normal(mean, std)
         return x, y
-
-    @staticmethod
-    def _get_default_data_options() -> List[str]:
-        return [TrafficGenerator.LARGE, TrafficGenerator.MEDIUM, TrafficGenerator.SMALL]
 
     def get_random_nests_locations(self, nests_num) -> List[Point]:
         """

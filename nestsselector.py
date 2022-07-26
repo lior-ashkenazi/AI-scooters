@@ -38,10 +38,12 @@ SEARCH_RADIUS = 40  # todo - get this value as an input? what value to assign?
 
 
 class NestsSelector:
-    DYNAMIC = "dynamic"
-    STATIC = "static"
-    CUSTOM_DATA = "custom"
-    DEFAULT_DATA = "default"
+    DYNAMIC_AGENT = ["dynamic", "d"]
+    STATIC_AGENT = ["static", "s"]
+    CUSTOM_DATA = ["custom", "c"]
+    DEFAULT_DATA = ["default", "d"]
+    CONSOLE_IO = ["console", "c"]
+    GRAPHIC_IO = ["graphic", "g"]
 
     def __init__(self, io: AbstractIO = ConsoleIO()):
         self.io = io
@@ -53,25 +55,19 @@ class NestsSelector:
         potential_rides: List[Ride] = self._generate_traffic_data()
         agent_info: AgentInfo = self._get_agent_info(potential_rides)
 
-        if args.agent == NestsSelector.STATIC:
+        if args.agent in NestsSelector.STATIC_AGENT:
             self._run_static_problem(agent_info)
-        elif args.agent == NestsSelector.DYNAMIC:
+        elif args.agent in NestsSelector.DYNAMIC_AGENT:
             iterations_num: int = int(
                 self.io.get_user_numerical_choice(
                     GET_ITERATIONS_NUMBER_DYNAMIC_RUN_PROMPT, 0, float("inf")))
             self._run_dynamic_problem(agent_info, iterations_num)
 
     def _generate_traffic_data(self) -> List[Ride]:
-
-        # get data type - default or custom:
-        data_type = self.io.get_user_discrete_choice(GET_DATA_PROMPT,
-                                                     [NestsSelector.DEFAULT_DATA,
-                                                      NestsSelector.CUSTOM_DATA])
-
         # return the data requested:
-        if data_type == NestsSelector.DEFAULT_DATA:
+        if args.data in NestsSelector.DEFAULT_DATA:
             return self.traffic_generator.get_default_data()
-        elif data_type == NestsSelector.CUSTOM_DATA:
+        elif args.data in NestsSelector.CUSTOM_DATA:
             return self.traffic_generator.get_custom_data()
 
     def _get_agent_info(self, potential_rides: List[Ride]):
@@ -156,16 +152,18 @@ if __name__ == '__main__':
                         "--io",
                         default='c',
                         help="The input/output interface of the program",
-                        choices=["c", "console", "g", "graphical"],
-                        required=True)
+                        choices=NestsSelector.CONSOLE_IO + NestsSelector.GRAPHIC_IO)
     parser.add_argument("-a",
                         "--agent",
                         default='d',
                         help="The type of agent",
-                        choices=["d", "dynamic", "s", "static"],
-                        required=True
-                        )
+                        choices=NestsSelector.DYNAMIC_AGENT + NestsSelector.STATIC_AGENT)
+    parser.add_argument("-d",
+                        "--data",
+                        default='d',
+                        help="The type of data",
+                        choices=NestsSelector.DEFAULT_DATA+NestsSelector.CUSTOM_DATA)
     args = parser.parse_args()
-    io = GraphicIO() if args.io in ["g", "graphical"] else ConsoleIO()
+    io = GraphicIO() if args.io in NestsSelector.GRAPHIC_IO else ConsoleIO()
     ns = NestsSelector()
     ns.run()

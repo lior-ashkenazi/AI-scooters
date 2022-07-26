@@ -50,3 +50,8 @@ class DynamicAgent(Agent):
         """
         pass
 
+    def get_start_state(self) -> Map:
+        """
+        returns the initial randomized points of the nests
+        """
+        return Map(self.agent_info.optional_nests)

@@ -8,6 +8,9 @@ from data.trafficgenerator import TrafficGenerator
 
 
 class DynamicRLAgent(DynamicAgent):
+    def learn(self):
+        self.get_average_revenue(iterations_num=10)
+
     def get_state(self, scooters_locations: Map, bins_num: int = 10) -> np.ndarray:
         """
         gets scooters locations and returns State, as a grid such that each cell represents the
@@ -16,3 +19,5 @@ class DynamicRLAgent(DynamicAgent):
         binx, biny = TrafficGenerator.get_coordinates_bins(bins_num)
         return binned_statistic_2d(scooters_locations[:, 0], scooters_locations[:, 1],
                                    None, 'count', bins=[binx, biny]).statistic
+
+

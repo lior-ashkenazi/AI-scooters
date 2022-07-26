@@ -1,4 +1,4 @@
-from abstractio import AbstractIO
+from programio.abstractio import AbstractIO
 from typing import List
 
 
