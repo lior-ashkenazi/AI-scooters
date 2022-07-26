@@ -26,15 +26,23 @@ GET_EXPENSES_FACTOR_PROMPT = "Please type expenses factor:"
 GET_LEARNING_TIME_PROMPT = "Please type learning time (seconds):"
 GET_ITERATIONS_NUMBER_DYNAMIC_RUN_PROMPT = "Please enter number of iterations to run" \
                                            " in the end of the learning process:"
+GET_DYNAMIC_RL_GRID_LENGTH = "Please enter state grid length:"
+GET_RL_EPSILON = "Please enter an epsilon:"
 GET_AGENT_PROMPT = "Please type agent type:"
 GET_DATA_PROMPT = "Please type data choice:"
 MIN_NUMBER_OF_SCOOTERS = 1
 MAX_NUMBER_OF_SCOOTERS = float("inf")
 MIN_NUMBER_OF_NESTS = 1
 MAX_NUMBER_OF_NESTS = float("inf")
+MIN_DYNAMIC_RL_GRID_LENGTH = 1
+MAX_DYNAMIC_RL_GRID_LENGTH = 1000
+MIN_RL_EPSILON = 0
+MAX_RL_EPSILON = 1
 SEARCH_RADIUS = 40  # todo - get this value as an input? what value to assign?
-                    # this value should represent the radius in terms of euclidian
-                    #  distance in x,y coordinates of the map (not meters)
+
+
+# this value should represent the radius in terms of euclidean
+#  distance in x,y coordinates of the map (not meters)
 
 
 class NestsSelector:
@@ -101,8 +109,7 @@ class NestsSelector:
         # get agent:
         agent_chosen: str = self.io.get_user_discrete_choice(
             GET_AGENT_PROMPT, AgentsFactory.get_static_agent_legal_values())
-        agent: StaticAgent = AgentsFactory.build_static_agent(agent_chosen,
-                                                              agent_info)
+        agent: StaticAgent = AgentsFactory.build_static_agent(agent_chosen, agent_info)
 
         # get result:
         result: Tuple[List[NestAllocation], float] = agent.spread_scooters()
@@ -117,8 +124,9 @@ class NestsSelector:
         # get agent:
         agent_chosen: str = self.io.get_user_discrete_choice(
             GET_AGENT_PROMPT, AgentsFactory.get_dynamic_agent_legal_values())
-        agent: DynamicAgent = AgentsFactory.build_dynamic_agent(agent_chosen,
-                                                                agent_info)
+        if agent_chosen == AgentsFactory.AGENT_DYNAMIC_RL:
+            agent_info = self._get_dynamic_rl_agent_info(agent_info)
+        agent: DynamicAgent = AgentsFactory.build_dynamic_agent(agent_chosen, agent_info)
 
         # learn:
         agent.learn()
@@ -127,8 +135,18 @@ class NestsSelector:
         avg_revenue: float = agent.get_average_revenue(iterations_num)
         self._show_dynamic_results(agent, avg_revenue)
 
+    def _get_dynamic_rl_agent_info(self, agent_info: AgentInfo):
+        agent_info.epsilon = self.io.get_user_numerical_choice(GET_RL_EPSILON,
+                                                               MIN_RL_EPSILON,
+                                                               MAX_RL_EPSILON)
+        agent_info.grid_len = int(self.io.get_user_numerical_choice(GET_DYNAMIC_RL_GRID_LENGTH,
+                                                                    MIN_DYNAMIC_RL_GRID_LENGTH,
+                                                                    MAX_DYNAMIC_RL_GRID_LENGTH))
+        return agent_info
+
     def _show_static_results(self, agent: StaticAgent,
-                             spread_points: List[NestAllocation], revenue: float):
+                             spread_points: List[NestAllocation],
+                             revenue: float):
         self.io.show_value("revenue:", revenue)
         self.io.confirm_and_continue()
         self.io.show_spread(spread_points)
@@ -162,7 +180,7 @@ if __name__ == '__main__':
                         "--data",
                         default='d',
                         help="The type of data",
-                        choices=NestsSelector.DEFAULT_DATA+NestsSelector.CUSTOM_DATA)
+                        choices=NestsSelector.DEFAULT_DATA + NestsSelector.CUSTOM_DATA)
     args = parser.parse_args()
     io = GraphicIO() if args.io in NestsSelector.GRAPHIC_IO else ConsoleIO()
     ns = NestsSelector()

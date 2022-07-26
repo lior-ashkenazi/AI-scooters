@@ -1,5 +1,5 @@
 import pandas as pd
-from typing import List, Optional
+from typing import List, Optional, Union
 import numpy as np
 from scipy import spatial
 import ot
@@ -38,7 +38,7 @@ def point_from_numpy(arr: np.ndarray) -> Point:
     return Point(arr[0], arr[1])
 
 
-def point_list_to_numpy(point_list: List[Point]) -> np.ndarray:
+def point_list_to_numpy(point_list: Union[List[Point], np.ndarray]) -> np.ndarray:
     arr = []
     for point in point_list:
         arr.append([point.x, point.y])
@@ -124,6 +124,9 @@ class Map:
         :return: None
         """
         self._points = np.vstack([self._points, point.to_numpy()])
+
+    def to_numpy(self):
+        return point_list_to_numpy(self._points)
 
     def pop_nearest_point_in_radius(self, location: Point,
                                     radius: float) -> Optional[Point]:

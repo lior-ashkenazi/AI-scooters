@@ -2,6 +2,7 @@ from data.featuresdatagenerator import FeaturesData
 from simulation.incomesexpenses import IncomesExpenses
 from simulation.trafficsimulator import TrafficSimulator
 from data.trafficdatatypes import *
+from typing import Optional
 
 
 class AgentInfo:
@@ -15,6 +16,8 @@ class AgentInfo:
         self.learning_time: int = learning_time
         self.optional_nests: List[Point] = optional_nests
         self.scooters_num: int = scooters_num
+        self.epsilon : Optional[float] = None
+        self.grid_len : Optional[int] = None
 
 
 class Agent:

@@ -2,7 +2,7 @@ import numpy as np
 
 from agents.agent import Agent
 from abc import abstractmethod
-from typing import Tuple
+from typing import Tuple, Union
 from data.trafficdatatypes import *
 from data.trafficgenerator import TrafficGenerator
 
@@ -29,7 +29,7 @@ class DynamicAgent(Agent):
             end_day_scooters_locations: Map = result[1]
 
             # get the destination map
-            cur_spread: List[NestAllocation] = self.get_spread_points(
+            cur_spread: List[NestAllocation] = self.get_nests_spread(
                 end_day_scooters_locations)
             destination_locations: Map = self.agent_info.traffic_simulator. \
                 get_scooters_location_from_nests_spread(cur_spread)
@@ -42,7 +42,7 @@ class DynamicAgent(Agent):
         return total_revenue / iterations_num
 
     @abstractmethod
-    def get_spread_points(self, scooters_locations: Map) -> List[NestAllocation]:
+    def get_nests_spread(self, scooters_locations: Union[Map, np.ndarray]) -> List[NestAllocation]:
         """
         after learning - given current scooters location, choose nest allocation
         :param scooters_locations: map of scooters location
@@ -54,4 +54,5 @@ class DynamicAgent(Agent):
         """
         returns the initial randomized points of the nests
         """
-        return Map(np.array(self.agent_info.optional_nests))
+        pass
+        # return Map(np.array([point.to_numpy() for point in self.agent_info.optional_nests]))

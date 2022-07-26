@@ -22,6 +22,8 @@ class TrafficGenerator:
     LARGE: str = "large"
     MEDIUM: str = "medium"
     SMALL: str = "small"
+    MIN_CUSTOM_DATA = 0
+    MAX_CUSTOM_DATA = 100000
 
     def __init__(self, io: AbstractIO):
         self.io: AbstractIO = io
@@ -89,7 +91,8 @@ class TrafficGenerator:
         :return: all the samples created (list of rides)
         """
         samples_num = int(self.io.get_user_numerical_choice(GET_CUSTOM_DATA_SAMPLES_NUMBER,
-                                                            0, float("inf")))
+                                                            TrafficGenerator.MIN_CUSTOM_DATA,
+                                                            TrafficGenerator.MAX_CUSTOM_DATA))
 
         rides = []
         for day_part in [day_part.value for day_part in TrafficGenerator.DayPart]:
@@ -157,7 +160,8 @@ class TrafficGenerator:
         x, y = np.random.multivariate_normal(mean, std)
         return x, y
 
-    def get_random_nests_locations(self, nests_num) -> List[Point]:
+    @staticmethod
+    def get_random_nests_locations(nests_num) -> List[Point]:
         """
         generates random points for optional nests (offered by the Municipality)
         :param nests_num:
@@ -167,13 +171,22 @@ class TrafficGenerator:
                 np.random.multivariate_normal(config.DISTRICT_ALL_MEAN,
                                               config.DISTRICT_ALL_COV,
                                               nests_num)]
+    @staticmethod
+    def get_random_end_day_scooters_locations(scooters_num: int):
+        """
+        generates random scooters location in the an end of a day
+        """
+        return Map(np.array([Point(point[0],point[1]) for point in np.random.multivariate_normal(
+            config.DISTRICT_ALL_MEAN,config.DISTRICT_ALL_COV,scooters_num)]))
 
     @staticmethod
-    def get_coordinates_bins(bins_num) -> Tuple[np.ndarray, np.ndarray]:
+    def get_coordinates_bins(bins_num:int) -> Tuple[np.ndarray, np.ndarray]:
         """
         return bins for longitude and latitude
         :param::
         """
+        binx:np.ndarray
+        biny:np.ndarray
         binx = np.linspace(config.MIN_LONGITUDE, config.MAX_LONGITUDE, bins_num + 1)
         biny = np.linspace(config.MIN_LATITUDE, config.MAX_LATITUDE, bins_num + 1)
         return binx, biny
