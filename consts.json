@@ -1,0 +1,32 @@
+{
+  "samples_num": 10,
+  "incomes_factor": 1,
+  "expenses_factor": 1,
+  "learning_time": 10,
+  "optional_nests": [
+    [
+      34.78499717,
+      32.07414688
+    ],
+    [
+      34.78057028,
+      32.08128435
+    ],
+    [
+      34.77003214,
+      32.06651761
+    ],
+    [
+      34.77822612,
+      32.0626935
+    ],
+    [
+      34.77504318,
+      32.08147712
+    ]
+  ],
+  "scooters_num": 10,
+  "epsilon": 0,
+  "grid_len": 15,
+  "agent_chosen": "dynamic_RL"
+}

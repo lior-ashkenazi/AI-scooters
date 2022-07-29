@@ -64,7 +64,7 @@ class TrafficGenerator:
     def _get_default_data_options() -> List[str]:
         return [TrafficGenerator.LARGE, TrafficGenerator.MEDIUM, TrafficGenerator.SMALL]
 
-    def get_custom_data(self) -> List[Ride]:
+    def get_custom_data(self, samples_num : Optional[int] = None) -> List[Ride]:
         """
         we assume that we have files that contains:
         - industrial locations (list of coordinates)
@@ -89,9 +89,10 @@ class TrafficGenerator:
             - number of samples (that fits to the origin, destination, and start time)
         :return: all the samples created (list of rides)
         """
-        samples_num = int(self.io.get_user_numerical_choice(GET_CUSTOM_DATA_SAMPLES_NUMBER,
-                                                            TrafficGenerator.MIN_CUSTOM_DATA,
-                                                            TrafficGenerator.MAX_CUSTOM_DATA))
+        if not samples_num:
+            samples_num = int(self.io.get_user_numerical_choice(GET_CUSTOM_DATA_SAMPLES_NUMBER,
+                                                                TrafficGenerator.MIN_CUSTOM_DATA,
+                                                                TrafficGenerator.MAX_CUSTOM_DATA))
 
         rides = []
         for day_part in [day_part.value for day_part in TrafficGenerator.DayPart]:
@@ -170,22 +171,27 @@ class TrafficGenerator:
                 np.random.multivariate_normal(config.DISTRICT_ALL_MEAN,
                                               config.DISTRICT_ALL_COV,
                                               nests_num)]
+
+    @staticmethod
+    def get_not_random_locations(optional_nests: List[List[int]]) -> List[Point]:
+        return [Point(x, y) for x, y in optional_nests]
+
     @staticmethod
     def get_random_end_day_scooters_locations(scooters_num: int):
         """
         generates random scooters location in the an end of a day
         """
-        return Map(np.array([[point[0],point[1]] for point in np.random.multivariate_normal(
-            config.DISTRICT_ALL_MEAN,config.DISTRICT_ALL_COV,scooters_num)]))
+        return Map(np.array([[point[0], point[1]] for point in np.random.multivariate_normal(
+            config.DISTRICT_ALL_MEAN, config.DISTRICT_ALL_COV, scooters_num)]))
 
     @staticmethod
-    def get_coordinates_bins(bins_num:int) -> Tuple[np.ndarray, np.ndarray]:
+    def get_coordinates_bins(bins_num: int) -> Tuple[np.ndarray, np.ndarray]:
         """
         return bins for longitude and latitude
         :param::
         """
-        binx:np.ndarray
-        biny:np.ndarray
+        binx: np.ndarray
+        biny: np.ndarray
         binx = np.linspace(config.MIN_LONGITUDE, config.MAX_LONGITUDE, bins_num + 1)
         biny = np.linspace(config.MIN_LATITUDE, config.MAX_LATITUDE, bins_num + 1)
         return binx, biny

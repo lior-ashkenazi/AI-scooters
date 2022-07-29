@@ -1,3 +1,5 @@
+import sys
+
 from programio.abstractio import AbstractIO
 from programio.consoleio import ConsoleIO
 from programio.graphicalio import GraphicIO
@@ -17,6 +19,8 @@ from simulation.incomesexpenses import IncomesExpenses
 from typing import List, Tuple
 
 import argparse
+
+import json
 
 GET_PROBLEM_PROMPT = "Please type problem to solve from the options below:"
 GET_NUMBER_OF_SCOOTER_PROMPT = "Please type number of scooters available:"
@@ -125,12 +129,14 @@ class NestsSelector:
         agent_chosen: str = self.io.get_user_discrete_choice(
             GET_AGENT_PROMPT, AgentsFactory.get_dynamic_agent_legal_values())
         if agent_chosen == AgentsFactory.AGENT_DYNAMIC_RL:
-            agent_info.epsilon = self.io.get_user_numerical_choice(GET_RL_EPSILON,
-                                                                   MIN_RL_EPSILON,
-                                                                   MAX_RL_EPSILON)
-            agent_info.grid_len = int(self.io.get_user_numerical_choice(GET_DYNAMIC_RL_GRID_LENGTH,
-                                                                        MIN_DYNAMIC_RL_GRID_LENGTH,
-                                                                        MAX_DYNAMIC_RL_GRID_LENGTH))
+            agent_info.epsilon = \
+                self.io.get_user_numerical_choice(GET_RL_EPSILON,
+                                                  MIN_RL_EPSILON,
+                                                  MAX_RL_EPSILON)
+            agent_info.grid_len = \
+                int(self.io.get_user_numerical_choice(GET_DYNAMIC_RL_GRID_LENGTH,
+                                                      MIN_DYNAMIC_RL_GRID_LENGTH,
+                                                      MAX_DYNAMIC_RL_GRID_LENGTH))
         agent: DynamicAgent = AgentsFactory.build_dynamic_agent(agent_chosen, agent_info)
 
         # learn:
@@ -140,8 +146,35 @@ class NestsSelector:
         avg_revenue: float = agent.get_average_revenue(iterations_num)
         self._show_dynamic_results(agent, avg_revenue)
 
-    def run_implicitly(self):
-        pass
+    def run_demo(self):
+        with open('consts.json', 'r') as f:
+            consts = json.load(f)
+
+        potential_rides: List[Ride] = self.traffic_generator.get_custom_data(consts['samples_num'])
+        traffic_simulator: TrafficSimulator = TrafficSimulator(potential_rides,
+                                                               SEARCH_RADIUS)
+        incomes_factor: float = consts['incomes_factor']
+        expenses_factor: float = consts['expenses_factor']
+        incomes_expenses: IncomesExpenses = IncomesExpenses(incomes_factor,
+                                                            expenses_factor)
+        features_data: FeaturesData = self.features_data_generator. \
+            generate_features_data()
+        learning_time = consts['learning_time']
+        optional_nests: List[Point] = self.traffic_generator.get_not_random_locations(
+            consts['optional_nests'])
+        scooters_num: int = consts['scooters_num']
+        epsilon = consts['epsilon']
+        grid_len = consts['grid_len']
+
+        agent_info = AgentInfo(traffic_simulator, incomes_expenses, features_data, learning_time,
+                               optional_nests, scooters_num, epsilon, grid_len)
+
+        agent_chosen = consts['agent_chosen']
+
+        agent: DynamicAgent = AgentsFactory.build_dynamic_agent(agent_chosen, agent_info)
+
+        agent.learn()
+
 
     def _show_static_results(self, agent: StaticAgent,
                              spread_points: List[NestAllocation],
@@ -181,6 +214,11 @@ if __name__ == '__main__':
                         help="The type of data",
                         choices=NestsSelector.DEFAULT_DATA + NestsSelector.CUSTOM_DATA)
     args = parser.parse_args()
-    io = GraphicIO() if args.io in NestsSelector.GRAPHIC_IO else ConsoleIO()
-    ns = NestsSelector()
-    ns.run()
+    # TODO to be deleted in the future
+    if len(sys.argv) == 1:
+        ns = NestsSelector()
+        ns.run_demo()
+    else:
+        io = GraphicIO() if args.io in NestsSelector.GRAPHIC_IO else ConsoleIO()
+        ns = NestsSelector(io)
+        ns.run()
