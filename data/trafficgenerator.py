@@ -4,7 +4,7 @@ from data.trafficdatatypes import *
 from typing import Tuple
 
 from enum import Enum
-import datetime
+import datetime as dt
 
 import data.config as config
 
@@ -16,18 +16,21 @@ RESIDENTIAL_LOCATIONS_PATH = ""  # todo - download some data
 
 GET_CUSTOM_DATA_SAMPLES_NUMBER = "Please type data samples number (for each day part):"
 
-SCOOTERS_AVERAGE_SPEED = 20
-
 
 class TrafficGenerator:
     LARGE: str = "large"
     MEDIUM: str = "medium"
     SMALL: str = "small"
-    MIN_CUSTOM_DATA = 0
-    MAX_CUSTOM_DATA = 100000
 
-    def __init__(self, io: AbstractIO):
-        self.io: AbstractIO = io
+    MIN_CUSTOM_DATA :int= 0
+    MAX_CUSTOM_DATA :int= 100000
+
+    SCOOTERS_AVERAGE_SPEED:int = 20
+
+    LATEST_HOUR:int = 23
+    LATEST_MINUTE :int= 59
+    LATEST_TIME :dt.time = dt.time(hour=LATEST_HOUR, minute=LATEST_MINUTE).replace(second=0,
+                                                                          microsecond=0)
 
     class DayPart(Enum):
         MORNING: int = 1
@@ -51,6 +54,9 @@ class TrafficGenerator:
         DISTRICT_5: int = 5
         DISTRICT_6: int = 6
 
+    def __init__(self, io: AbstractIO):
+        self.io: AbstractIO = io
+
     def get_default_data(self) -> List[Ride]:
         complexity = self.io.get_user_discrete_choice(
             GET_DEFAULT_DATA_COMPLEXITY_PROMPT, TrafficGenerator._get_default_data_options())
@@ -66,7 +72,7 @@ class TrafficGenerator:
     def _get_default_data_options() -> List[str]:
         return [TrafficGenerator.LARGE, TrafficGenerator.MEDIUM, TrafficGenerator.SMALL]
 
-    def get_custom_data(self, samples_num : Optional[int] = None) -> List[Ride]:
+    def get_custom_data(self, samples_num: Optional[int] = None) -> List[Ride]:
         """
         we assume that we have files that contains:
         - industrial locations (list of coordinates)
@@ -96,30 +102,31 @@ class TrafficGenerator:
                                                                 TrafficGenerator.MIN_CUSTOM_DATA,
                                                                 TrafficGenerator.MAX_CUSTOM_DATA))
 
-        rides = []
+        rides: List[Ride] = []
         for day_part in [day_part.value for day_part in TrafficGenerator.DayPart]:
             rides.extend(TrafficGenerator._generate_rides_day_part(day_part, samples_num))
         return rides
 
     @staticmethod
     def _generate_rides_day_part(day_part: int, samples_num: int) -> List[Ride]:
-        # TODO later we can compute the end-time by the distance * constant (maybe something
-        #  more complicated than that
         rides = []
         for i in range(samples_num):
-            start_time = TrafficGenerator. \
+            start_time: dt.time = TrafficGenerator. \
                 _generate_start_time(*config.day_parts_hours_prob[day_part])
-            ride_type = TrafficGenerator. \
+            ride_type: TrafficGenerator.RideType = TrafficGenerator. \
                 _draw_ride_type(config.day_part_rides_prob[day_part])
-            end_time = TrafficGenerator. \
-                _generate_end_time(start_time, *config.day_parts_hours_prob[day_part])
 
+            orig: int
+            dest: int
             orig, dest = config.ride_type_to_zones[ride_type]
 
-            ride = Ride(Point(*TrafficGenerator._sample_coordinates(orig)),
-                        Point(*TrafficGenerator._sample_coordinates(dest)),
-                        start_time,
-                        end_time)
+            orig_point: Point = Point(*TrafficGenerator._sample_coordinates(orig))
+            dest_point: Point = Point(*TrafficGenerator._sample_coordinates(dest))
+
+            end_time: dt.time = TrafficGenerator._calculate_end_time(orig_point, dest_point,
+                                                                     start_time)
+
+            ride: Ride = Ride(orig_point, dest_point, start_time, end_time)
 
             rides.append(ride)
 
@@ -127,38 +134,57 @@ class TrafficGenerator:
 
     @staticmethod
     def _generate_start_time(hour_mean, hour_variance):
-        return datetime.time(
+        return dt.time(
             hour=TrafficGenerator._sample_hour_normal_distribution(hour_mean, hour_variance),
-            minute=np.random.randint(0, 59)).replace(second=0, microsecond=0)
+            minute=np.random.randint(0, TrafficGenerator.LATEST_MINUTE)).replace(second=0,
+                                                                                 microsecond=0)
 
     @staticmethod
     def _draw_ride_type(hour_prob_vec):
         return np.random.choice([ride_type.value for ride_type in TrafficGenerator.RideType],
                                 p=hour_prob_vec)
 
-    # TODO change for more complicated computation based on distance and speed
     @staticmethod
     def _generate_end_time(start_time, hour_mean, hour_variance):
         while True:
-            end_time = datetime.time(
+            end_time = dt.time(
                 hour=TrafficGenerator._sample_hour_normal_distribution(hour_mean, hour_variance),
-                minute=np.random.randint(0, 59)).replace(second=0, microsecond=0)
+                minute=np.random.randint(0, TrafficGenerator.LATEST_MINUTE)).replace(second=0,
+                                                                                     microsecond=0)
             if start_time < end_time:
                 return end_time
 
     @staticmethod
+    def _calculate_end_time(a: Point, b: Point, start_time: dt.time):
+        dist: float = point_dist(a, b)
+        time_in_hours: float = dist / TrafficGenerator.SCOOTERS_AVERAGE_SPEED
+        time_in_minutes: int = round(60 * time_in_hours)
+        start_time: dt.datetime = dt.datetime(year=2022, month=1, day=1, hour=start_time.hour,
+                                              minute=start_time.minute, second=start_time.second)
+        end_time: dt.datetime = start_time + dt.timedelta(minutes=round(time_in_minutes))
+        if end_time.hour <= TrafficGenerator.LATEST_HOUR:
+            return end_time.time()
+        if end_time.hour > 23:
+            return TrafficGenerator.LATEST_TIME
+
+    @staticmethod
     def _sample_hour_normal_distribution(hour_mean, hour_variance):
         while True:
-            hour = round(np.random.normal(hour_mean, hour_variance))
+            hour: int = round(np.random.normal(hour_mean, hour_variance))
             if hour < 24:
                 return hour
 
     @staticmethod
     def _sample_coordinates(zone_type: int) -> Tuple[float, float]:
-        district = np.random.choice([district.value for district in TrafficGenerator.District]
-                                    , p=config.zone_type_probabilities[zone_type])
+        district: TrafficGenerator.District = \
+            np.random.choice([district.value for district in TrafficGenerator.District],
+                             p=config.zone_type_probabilities[zone_type])
+        mean : float
+        std : float
         mean, std = config.district_probabilities[district]
         # x is longitude and y latitude
+        x : float
+        y : float
         x, y = np.random.multivariate_normal(mean, std)
         return x, y
 
@@ -194,6 +220,6 @@ class TrafficGenerator:
         """
         binx: np.ndarray
         biny: np.ndarray
-        binx = np.linspace(config.MIN_LONGITUDE, config.MAX_LONGITUDE, bins_num + 1)
-        biny = np.linspace(config.MIN_LATITUDE, config.MAX_LATITUDE, bins_num + 1)
+        binx = np.linspace(config.MIN_LATITUDE, config.MAX_LATITUDE, bins_num + 1)
+        biny = np.linspace(config.MIN_LONGITUDE, config.MAX_LONGITUDE, bins_num + 1)
         return binx, biny

@@ -14,6 +14,7 @@ DEST_Y = "dest_y"
 ORIG_Y = "orig_y"
 DEST_X = "dest_x"
 ORIG_X = "orig_x"
+EARTH_RADIUS = 6371  # Radius of earth in kilometers
 
 
 class Point:
@@ -42,9 +43,8 @@ def point_dist(a: Point, b: Point) -> float:
     dlat = lat2 - lat1
     a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
     c = 2 * asin(sqrt(a))
-    r = 6371  # Radius of earth in kilometers
 
-    return c * r  # Kilometers
+    return c * EARTH_RADIUS  # Kilometers
 
 
 def point_from_numpy(arr: np.ndarray) -> Point:
