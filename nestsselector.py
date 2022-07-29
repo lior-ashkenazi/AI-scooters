@@ -125,7 +125,12 @@ class NestsSelector:
         agent_chosen: str = self.io.get_user_discrete_choice(
             GET_AGENT_PROMPT, AgentsFactory.get_dynamic_agent_legal_values())
         if agent_chosen == AgentsFactory.AGENT_DYNAMIC_RL:
-            agent_info = self._get_dynamic_rl_agent_info(agent_info)
+            agent_info.epsilon = self.io.get_user_numerical_choice(GET_RL_EPSILON,
+                                                                   MIN_RL_EPSILON,
+                                                                   MAX_RL_EPSILON)
+            agent_info.grid_len = int(self.io.get_user_numerical_choice(GET_DYNAMIC_RL_GRID_LENGTH,
+                                                                        MIN_DYNAMIC_RL_GRID_LENGTH,
+                                                                        MAX_DYNAMIC_RL_GRID_LENGTH))
         agent: DynamicAgent = AgentsFactory.build_dynamic_agent(agent_chosen, agent_info)
 
         # learn:
@@ -135,14 +140,8 @@ class NestsSelector:
         avg_revenue: float = agent.get_average_revenue(iterations_num)
         self._show_dynamic_results(agent, avg_revenue)
 
-    def _get_dynamic_rl_agent_info(self, agent_info: AgentInfo):
-        agent_info.epsilon = self.io.get_user_numerical_choice(GET_RL_EPSILON,
-                                                               MIN_RL_EPSILON,
-                                                               MAX_RL_EPSILON)
-        agent_info.grid_len = int(self.io.get_user_numerical_choice(GET_DYNAMIC_RL_GRID_LENGTH,
-                                                                    MIN_DYNAMIC_RL_GRID_LENGTH,
-                                                                    MAX_DYNAMIC_RL_GRID_LENGTH))
-        return agent_info
+    def run_implicitly(self):
+        pass
 
     def _show_static_results(self, agent: StaticAgent,
                              spread_points: List[NestAllocation],

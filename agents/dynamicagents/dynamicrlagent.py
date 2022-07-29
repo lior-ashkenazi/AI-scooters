@@ -18,10 +18,10 @@ import itertools as it
 
 class DynamicRLAgent(ReinforcementLearningAgent, DynamicAgent):
     def learn(self):
-        end_day_scooters_locations: Map = TrafficGenerator.get_random_end_day_scooters_locations(
+        prev_scooters_locations: Map = TrafficGenerator.get_random_end_day_scooters_locations(
             self.agent_info.scooters_num)
+        state = self.get_state(prev_scooters_locations)
         rides_completed = []
-        state = self.get_state(end_day_scooters_locations)
         # TODO - how do we iterate the process of learning?
         for i in range(10):
             # choice = random.choice([self.epsilon, 1 - self.epsilon])
@@ -32,27 +32,26 @@ class DynamicRLAgent(ReinforcementLearningAgent, DynamicAgent):
             action: np.ndarray = self.get_action()
 
             # get the destination map
-            cur_spread: List[NestAllocation] = self.get_nests_spread(action)
-            cur_locations: Map = self.agent_info.traffic_simulator. \
-                get_scooters_location_from_nests_spread(cur_spread)
-
-            # compute revenue
-            # TODO - note that in first iteration, the revenue is negative. Should we escape the
-            #  calculation in the first iteration?
-            cur_revenue: float = self.agent_info.incomes_expenses.calculate_revenue(
-                rides_completed, end_day_scooters_locations, cur_locations)
-
-            # TODO NN can learn here after calculating revenue
+            prev_nests_spread: List[NestAllocation] = self.get_nests_spread(action)
+            prev_nests_locations: Map = self.agent_info.traffic_simulator. \
+                get_scooters_location_from_nests_spread(prev_nests_spread)
 
             # get simulation results - rides completed and scooters final location:
             result: Tuple[List[Ride], Map] = self.agent_info. \
-                traffic_simulator.get_simulation_result(cur_locations)
+                traffic_simulator.get_simulation_result(prev_nests_locations)
             rides_completed: List[Ride] = result[0]
-            end_day_scooters_locations: Map = result[1]
-            state: np.ndarray = self.get_state(end_day_scooters_locations)
+            next_day_locations: Map = result[1]
+
+            # compute revenue
+            cur_revenue: float = self.agent_info.incomes_expenses.calculate_revenue(
+                rides_completed, prev_scooters_locations, prev_nests_locations)
+
+            # TODO NN can learn here after calculating revenue
+
+            prev_scooters_locations = next_day_locations
+            state = self.get_state(prev_scooters_locations)
 
     def get_state(self, end_day_scooters_locations: Map) -> np.ndarray:
-        end_day_scooters_locations: np.ndarray = end_day_scooters_locations.to_numpy()
         binx: np.ndarray
         biny: np.ndarray
         binx, biny = TrafficGenerator.get_coordinates_bins(self.agent_info.grid_len)

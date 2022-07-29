@@ -1,4 +1,3 @@
-import data.config
 from programio.abstractio import AbstractIO
 from data.trafficdatatypes import *
 
@@ -112,7 +111,7 @@ class TrafficGenerator:
             end_time = TrafficGenerator. \
                 _generate_end_time(start_time, *config.day_parts_hours_prob[day_part])
 
-            orig, dest = data.config.ride_type_to_zones[ride_type]
+            orig, dest = config.ride_type_to_zones[ride_type]
 
             ride = Ride(Point(*TrafficGenerator._sample_coordinates(orig)),
                         Point(*TrafficGenerator._sample_coordinates(dest)),
@@ -154,8 +153,8 @@ class TrafficGenerator:
     @staticmethod
     def _sample_coordinates(zone_type: int) -> Tuple[float, float]:
         district = np.random.choice([district.value for district in TrafficGenerator.District]
-                                    , p=data.config.zone_type_probabilities[zone_type])
-        mean, std = data.config.district_probabilities[district]
+                                    , p=config.zone_type_probabilities[zone_type])
+        mean, std = config.district_probabilities[district]
         # x is longitude and y latitude
         x, y = np.random.multivariate_normal(mean, std)
         return x, y
@@ -176,7 +175,7 @@ class TrafficGenerator:
         """
         generates random scooters location in the an end of a day
         """
-        return Map(np.array([Point(point[0],point[1]) for point in np.random.multivariate_normal(
+        return Map(np.array([[point[0],point[1]] for point in np.random.multivariate_normal(
             config.DISTRICT_ALL_MEAN,config.DISTRICT_ALL_COV,scooters_num)]))
 
     @staticmethod

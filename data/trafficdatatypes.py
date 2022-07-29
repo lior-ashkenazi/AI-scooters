@@ -125,9 +125,6 @@ class Map:
         """
         self._points = np.vstack([self._points, point.to_numpy()])
 
-    def to_numpy(self):
-        return point_list_to_numpy(self._points)
-
     def pop_nearest_point_in_radius(self, location: Point,
                                     radius: float) -> Optional[Point]:
         """
