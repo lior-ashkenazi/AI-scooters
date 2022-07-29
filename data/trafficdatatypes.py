@@ -6,6 +6,7 @@ import ot
 import ot.plot
 import matplotlib.pylab as pl
 import datetime
+from math import radians, cos, sin, asin, sqrt
 
 END_TIME = "end_time"
 START_TIME = "start_time"
@@ -31,7 +32,19 @@ class Point:
 
 
 def point_dist(a: Point, b: Point) -> float:
-    return np.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2)
+    lat1 = radians(a.x)
+    lat2 = radians(b.x)
+    lon1 = radians(a.y)
+    lon2 = radians(a.y)
+
+    # Haversine formula
+    dlon = lon2 - lon1
+    dlat = lat2 - lat1
+    a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
+    c = 2 * asin(sqrt(a))
+    r = 6371  # Radius of earth in kilometers
+
+    return c * r  # Kilometers
 
 
 def point_from_numpy(arr: np.ndarray) -> Point:

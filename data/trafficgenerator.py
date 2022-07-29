@@ -16,6 +16,8 @@ RESIDENTIAL_LOCATIONS_PATH = ""  # todo - download some data
 
 GET_CUSTOM_DATA_SAMPLES_NUMBER = "Please type data samples number (for each day part):"
 
+SCOOTERS_AVERAGE_SPEED = 20
+
 
 class TrafficGenerator:
     LARGE: str = "large"
