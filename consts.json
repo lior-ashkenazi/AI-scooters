@@ -1,7 +1,7 @@
 {
   "samples_num": 10,
   "incomes_factor": 1,
-  "expenses_factor": 1,
+  "expenses_factor": 0.3,
   "learning_time": 10,
   "optional_nests": [
     [
