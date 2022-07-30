@@ -150,8 +150,7 @@ class NestsSelector:
         with open('consts.json', 'r') as f:
             consts = json.load(f)
 
-        potential_rides: List[Ride] = self.traffic_generator.get_custom_data(consts['samples_num'])
-        traffic_simulator: TrafficSimulator = TrafficSimulator(potential_rides,
+        traffic_simulator: TrafficSimulator = TrafficSimulator(consts['samples_num'],
                                                                SEARCH_RADIUS)
         incomes_factor: float = consts['incomes_factor']
         expenses_factor: float = consts['expenses_factor']

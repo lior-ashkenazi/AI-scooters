@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 from scipy.stats import binned_statistic_2d
 
 from agents.agent import AgentInfo
@@ -22,6 +23,9 @@ class DynamicRLAgent(ReinforcementLearningAgent, DynamicAgent):
             self.agent_info.scooters_num)
         state = self.get_state(prev_scooters_locations)
         rides_completed = []
+        total_revenue = []
+        states = [state]
+        actions = []
         # TODO - how do we iterate the process of learning?
         for i in range(10):
             # choice = random.choice([self.epsilon, 1 - self.epsilon])
@@ -45,19 +49,27 @@ class DynamicRLAgent(ReinforcementLearningAgent, DynamicAgent):
             # compute revenue
             cur_revenue: float = self.agent_info.incomes_expenses.calculate_revenue(
                 rides_completed, prev_scooters_locations, prev_nests_locations)
+            total_revenue.append(cur_revenue)
 
             # TODO NN can learn here after calculating revenue
 
             prev_scooters_locations = next_day_locations
             state = self.get_state(prev_scooters_locations)
+            states.append(state)
+            actions.append(action)
+            print(f'finished {i}th iteration')
+        plt.scatter(range(10), total_revenue)
+        plt.show()
 
     def get_state(self, end_day_scooters_locations: Map) -> np.ndarray:
         binx: np.ndarray
         biny: np.ndarray
         binx, biny = TrafficGenerator.get_coordinates_bins(self.agent_info.grid_len)
-        return binned_statistic_2d(end_day_scooters_locations[:, 0],
+        state = binned_statistic_2d(end_day_scooters_locations[:, 0],
                                    end_day_scooters_locations[:, 1],
                                    None, 'count', bins=[binx, biny]).statistic
+        assert end_day_scooters_locations.get_points().shape[0] == int(np.sum(state))
+        return state
 
     def get_action(self, *args) -> np.ndarray:
         # TODO - maybe this method is where we want to implement Deep RL, so the current content

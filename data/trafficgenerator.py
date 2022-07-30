@@ -186,6 +186,8 @@ class TrafficGenerator:
         x : float
         y : float
         x, y = np.random.multivariate_normal(mean, std)
+        x = np.clip(x, config.MIN_LATITUDE, config.MAX_LATITUDE)
+        y = np.clip(y, config.MIN_LONGITUDE, config.MAX_LONGITUDE)
         return x, y
 
     @staticmethod
