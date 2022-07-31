@@ -42,7 +42,7 @@ MIN_DYNAMIC_RL_GRID_LENGTH = 1
 MAX_DYNAMIC_RL_GRID_LENGTH = 1000
 MIN_RL_EPSILON = 0
 MAX_RL_EPSILON = 1
-SEARCH_RADIUS = 40  # todo - get this value as an input? what value to assign?
+SEARCH_RADIUS = 0.2  # in km, todo - get this value as an input? what value to assign?
 
 
 # this value should represent the radius in terms of euclidean
@@ -150,8 +150,7 @@ class NestsSelector:
         with open('consts.json', 'r') as f:
             consts = json.load(f)
 
-        potential_rides: List[Ride] = self.traffic_generator.get_custom_data(consts['samples_num'])
-        traffic_simulator: TrafficSimulator = TrafficSimulator(potential_rides,
+        traffic_simulator: TrafficSimulator = TrafficSimulator(consts['samples_num'],
                                                                SEARCH_RADIUS)
         incomes_factor: float = consts['incomes_factor']
         expenses_factor: float = consts['expenses_factor']

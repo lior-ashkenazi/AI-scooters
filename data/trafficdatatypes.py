@@ -32,6 +32,12 @@ class Point:
         return np.array([self.x, self.y])
 
 
+def point_dist_np(a: np.ndarray, b: np.ndarray) -> float:
+    a_point = Point(a[0], a[1])
+    b_point = Point(b[0], b[1])
+    return point_dist(a_point, b_point)
+
+
 def point_dist(a: Point, b: Point) -> float:
     lat1 = radians(a.x)
     lat2 = radians(b.x)
@@ -153,9 +159,10 @@ class Map:
 
         kd_tree = spatial.KDTree(self._points)
         distance, index = kd_tree.query(location.to_numpy())
-        if distance > radius:
-            return None
         selected_point: Point = point_from_numpy(self._points[index])
+        distance_km = point_dist(location, selected_point)
+        if distance_km > radius:
+            return None
         self._points = np.delete(self._points, index, axis=0)
         return selected_point
 
@@ -178,7 +185,10 @@ def optimal_transport(src: Map, dest: Map, plot=False) -> float:
         pl.plot(xt[:, 0], xt[:, 1], 'xr', label='Target samples')
         pl.title('OT matrix with samples')
         pl.show()
-    return sum(np.linalg.norm(ordered_xt - ordered_xs, axis=1))
+    distances_km = [point_dist_np(source, target) for source, target in zip(ordered_xs, ordered_xt)]
+    total_distance = sum(distances_km)
+    # return sum(np.linalg.norm(ordered_xt - ordered_xs, axis=1))
+    return total_distance
 
 
 if __name__ == '__main__':

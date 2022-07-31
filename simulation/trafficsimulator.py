@@ -2,12 +2,14 @@ from typing import Tuple
 from data.trafficdatatypes import *
 from queue import PriorityQueue
 import datetime
+from data.trafficgenerator import TrafficGenerator
 
 
 class TrafficSimulator:
 
-    def __init__(self, potential_rides: List[Ride], search_radius: int):
-        self._potential_rides: List[Ride] = potential_rides
+    def __init__(self, rides_per_day_part, search_radius: int):
+        self._rides_per_day_part: int = rides_per_day_part
+        self._traffic_generator: TrafficGenerator = TrafficGenerator(None)  # todo: check what to enter here
         self._search_radius: int = search_radius
 
     def get_simulation_result(self, scooters_initial_locations: Map) -> \
@@ -19,12 +21,13 @@ class TrafficSimulator:
             - map of final locations of scooters
         """
         # initialize datastructures
-        self._potential_rides.sort(key=lambda r: r.start_time)
+        potential_rides: List[Ride] = self._traffic_generator.get_custom_data(self._rides_per_day_part)
+        potential_rides.sort(key=lambda r: r.start_time)
         available_scooters: Map = scooters_initial_locations
         unavailable_scooters: PriorityQueue = PriorityQueue()
         rides_performed: List[Ride] = []
 
-        for ride in self._potential_rides:
+        for ride in potential_rides:
             # return scooters that finish ride to available scooters
             cur_time: datetime.time = ride.start_time
             TrafficSimulator.finish_rides(available_scooters, unavailable_scooters,

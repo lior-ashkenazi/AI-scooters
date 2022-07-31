@@ -186,6 +186,8 @@ class TrafficGenerator:
         x : float
         y : float
         x, y = np.random.multivariate_normal(mean, std)
+        x = np.clip(x, config.MIN_LATITUDE, config.MAX_LATITUDE)
+        y = np.clip(y, config.MIN_LONGITUDE, config.MAX_LONGITUDE)
         return x, y
 
     @staticmethod
@@ -209,8 +211,11 @@ class TrafficGenerator:
         """
         generates random scooters location in the an end of a day
         """
-        return Map(np.array([[point[0], point[1]] for point in np.random.multivariate_normal(
-            config.DISTRICT_ALL_MEAN, config.DISTRICT_ALL_COV, scooters_num)]))
+        points = np.array([[point[0], point[1]] for point in np.random.multivariate_normal(
+                    config.DISTRICT_ALL_MEAN, config.DISTRICT_ALL_COV, scooters_num)])
+        points[:, 0] = np.clip(points[:, 0], config.MIN_LATITUDE, config.MAX_LATITUDE)
+        points[:, 1] = np.clip(points[:, 1], config.MIN_LONGITUDE, config.MAX_LONGITUDE)
+        return Map(points)
 
     @staticmethod
     def get_coordinates_bins(bins_num: int) -> Tuple[np.ndarray, np.ndarray]:
