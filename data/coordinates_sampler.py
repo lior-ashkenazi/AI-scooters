@@ -15,7 +15,7 @@ class CoordinatesSampler:
 
     def sample_zone_coordinates(self, zone_type: int) -> Tuple[float, float]:
         # index resembles a cluster
-        zone_cluster: List[np.ndarray] = config.ZONE_CLUSTERS[3]
+        zone_cluster: List[np.ndarray] = config.ZONE_CLUSTERS[zone_type]
         index: int = np.random.choice(range(zone_cluster[CoordinatesSampler.CLUSTERS_NUMBER]),
                                       p=zone_cluster[CoordinatesSampler.CLUSTERS_WEIGHTS])
         mean: np.ndarray = zone_cluster[CoordinatesSampler.CLUSTERS_MEANS][index]

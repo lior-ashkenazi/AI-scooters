@@ -1,13 +1,13 @@
 from programio.abstractio import AbstractIO
 from data.trafficdatatypes import *
 from data.coordinates_sampler import CoordinatesSampler
+from data.time_generator import TimeGenerator
+import data.config as config
 
 from typing import Tuple
 
 from enum import Enum
 import datetime as dt
-
-import data.config as config
 
 import numpy as np
 
@@ -26,12 +26,6 @@ class TrafficGenerator:
     MIN_CUSTOM_DATA: int = 0
     MAX_CUSTOM_DATA: int = 100000
 
-    SCOOTERS_AVERAGE_SPEED: int = 20
-
-    LATEST_HOUR: int = 23
-    LATEST_MINUTE: int = 59
-    LATEST_TIME: dt.time = dt.time(hour=LATEST_HOUR, minute=LATEST_MINUTE).replace(second=0,
-                                                                                   microsecond=0)
 
     class DayPart(Enum):
         MORNING: int = 1
@@ -58,6 +52,7 @@ class TrafficGenerator:
     def __init__(self, io: AbstractIO):
         self.io: AbstractIO = io
         self.coords_sampler = CoordinatesSampler()
+        self.time_generator = TimeGenerator()
 
     def get_default_data(self) -> List[Ride]:
         complexity = self.io.get_user_discrete_choice(
@@ -112,8 +107,7 @@ class TrafficGenerator:
     def _generate_rides_day_part(self, day_part: int, samples_num: int) -> List[Ride]:
         rides = []
         for i in range(samples_num):
-            start_time: dt.time = TrafficGenerator. \
-                _generate_start_time(*config.DAY_PARTS_HOURS_PROB[day_part])
+            start_time: dt.time = self.time_generator.generate_start_time(day_part)
 
             ride_type: TrafficGenerator.RideType = TrafficGenerator. \
                 _draw_ride_type(config.DAY_PART_RIDES_PROB[day_part])
@@ -125,8 +119,9 @@ class TrafficGenerator:
             orig_point: Point = Point(*self.coords_sampler.sample_zone_coordinates(orig))
             dest_point: Point = Point(*self.coords_sampler.sample_zone_coordinates(dest))
 
-            end_time: dt.time = TrafficGenerator._calculate_end_time(orig_point, dest_point,
-                                                                     start_time)
+            end_time: dt.time = self.time_generator.generate_end_time(orig_point,
+                                                                      dest_point,
+                                                                      start_time)
 
             ride: Ride = Ride(orig_point, dest_point, start_time, end_time)
 
@@ -135,46 +130,9 @@ class TrafficGenerator:
         return rides
 
     @staticmethod
-    def _generate_start_time(hour_mean, hour_variance):
-        return dt.time(
-            hour=TrafficGenerator._sample_hour_normal_distribution(hour_mean, hour_variance),
-            minute=np.random.randint(0, TrafficGenerator.LATEST_MINUTE)).replace(second=0,
-                                                                                 microsecond=0)
-
-    @staticmethod
     def _draw_ride_type(hour_prob_vec):
         return np.random.choice([ride_type.value for ride_type in TrafficGenerator.RideType],
                                 p=hour_prob_vec)
-
-    @staticmethod
-    def _generate_end_time(start_time, hour_mean, hour_variance):
-        while True:
-            end_time = dt.time(
-                hour=TrafficGenerator._sample_hour_normal_distribution(hour_mean, hour_variance),
-                minute=np.random.randint(0, TrafficGenerator.LATEST_MINUTE)).replace(second=0,
-                                                                                     microsecond=0)
-            if start_time < end_time:
-                return end_time
-
-    @staticmethod
-    def _calculate_end_time(a: Point, b: Point, start_time: dt.time):
-        dist: float = point_dist(a, b)
-        time_in_hours: float = dist / TrafficGenerator.SCOOTERS_AVERAGE_SPEED
-        time_in_minutes: int = round(60 * time_in_hours)
-        start_time: dt.datetime = dt.datetime(year=2022, month=1, day=1, hour=start_time.hour,
-                                              minute=start_time.minute, second=start_time.second)
-        end_time: dt.datetime = start_time + dt.timedelta(minutes=round(time_in_minutes))
-        if end_time.hour <= TrafficGenerator.LATEST_HOUR:
-            return end_time.time()
-        if end_time.hour > 23:
-            return TrafficGenerator.LATEST_TIME
-
-    @staticmethod
-    def _sample_hour_normal_distribution(hour_mean, hour_variance):
-        while True:
-            hour: int = round(np.random.normal(hour_mean, hour_variance))
-            if hour < 24:
-                return hour
 
     # TODO these methods should not be class methods or static methods. For that to happen,
     #  we need to ensure that we always use TrafficGenerator as an instance and not as a class,
