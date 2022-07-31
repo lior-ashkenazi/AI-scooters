@@ -1,24 +1,30 @@
-from typing import Tuple, Optional
+from typing import Tuple, Union
 
 import numpy as np
 
 import data.config as config
 
+from data.trafficdatatypes import *
+
 
 class CoordinatesSampler:
-    def _sample_coordinates(self, zone_type: int) -> Tuple[float, float]:
-        district: TrafficGenerator.District = \
-            np.random.choice([district.value for district in TrafficGenerator.District],
-                             p=config.zone_type_probabilities[zone_type])
-        mean: float
-        std: float
-        mean, std = config.district_probabilities[district]
+    CLUSTERS_NUMBER: int = 0
+    CLUSTERS_WEIGHTS: int = 1
+    CLUSTERS_MEANS: int = 2
+    CLUSTERS_COVARIANCES: int = 3
+
+    def sample_zone_coordinates(self, zone_type: int) -> Tuple[float, float]:
+        # index resembles a cluster
+        zone_cluster: List[np.ndarray] = config.ZONE_CLUSTERS[3]
+        index: int = np.random.choice(range(zone_cluster[CoordinatesSampler.CLUSTERS_NUMBER]),
+                                      p=zone_cluster[CoordinatesSampler.CLUSTERS_WEIGHTS])
+        mean: np.ndarray = zone_cluster[CoordinatesSampler.CLUSTERS_MEANS][index]
+        std: np.ndarray = zone_cluster[CoordinatesSampler.CLUSTERS_COVARIANCES][index]
         # x is longitude and y latitude
         x: float
         y: float
         x, y = np.random.multivariate_normal(mean, std)
-        x = np.clip(x, config.MIN_LATITUDE, config.MAX_LATITUDE)
-        y = np.clip(y, config.MIN_LONGITUDE, config.MAX_LONGITUDE)
+        x, y = self._clip_coordinates(x, y)
         return x, y
 
     def get_random_nests_locations(self, nests_num) -> List[Point]:
@@ -35,15 +41,15 @@ class CoordinatesSampler:
     def get_not_random_locations(self, optional_nests: List[List[int]]) -> List[Point]:
         return [Point(x, y) for x, y in optional_nests]
 
-    def get_random_end_day_scooters_locations(self, scooters_num: int):
+    def sample_general_coordinates(self, samples_num: int):
         """
         generates random scooters location in the an end of a day
         """
-        points = np.array([[point[0], point[1]] for point in np.random.multivariate_normal(
-            config.DISTRICT_ALL_MEAN, config.DISTRICT_ALL_COV, scooters_num)])
-        points[:, 0] = np.clip(points[:, 0], config.MIN_LATITUDE, config.MAX_LATITUDE)
-        points[:, 1] = np.clip(points[:, 1], config.MIN_LONGITUDE, config.MAX_LONGITUDE)
-        return Map(points)
+        coords = np.array([[coords[0], coords[1]] for coords in np.random.multivariate_normal(
+            config.DISTRICT_ALL_MEAN, config.DISTRICT_ALL_COV, samples_num)])
+        coords[:, 0] = np.clip(coords[:, 0], config.MIN_LATITUDE, config.MAX_LATITUDE)
+        coords[:, 1] = np.clip(coords[:, 1], config.MIN_LONGITUDE, config.MAX_LONGITUDE)
+        return coords
 
     def get_coordinates_bins(self, bins_num: int) -> Tuple[np.ndarray, np.ndarray]:
         """
@@ -55,3 +61,9 @@ class CoordinatesSampler:
         binx = np.linspace(config.MIN_LATITUDE, config.MAX_LATITUDE, bins_num + 1)
         biny = np.linspace(config.MIN_LONGITUDE, config.MAX_LONGITUDE, bins_num + 1)
         return binx, biny
+
+    def _clip_coordinates(self, x: Union[np.ndarray, float], y: Union[np.ndarray, float]) -> \
+            Union[Tuple[np.ndarray, np.ndarray], Tuple[float, float]]:
+        x = np.clip(x, config.MIN_LATITUDE, config.MAX_LATITUDE)
+        y = np.clip(y, config.MIN_LONGITUDE, config.MAX_LONGITUDE)
+        return x, y

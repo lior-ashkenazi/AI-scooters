@@ -66,8 +66,8 @@ class DynamicRLAgent(ReinforcementLearningAgent, DynamicAgent):
         biny: np.ndarray
         binx, biny = TrafficGenerator.get_coordinates_bins(self.agent_info.grid_len)
         state = binned_statistic_2d(end_day_scooters_locations[:, 0],
-                                   end_day_scooters_locations[:, 1],
-                                   None, 'count', bins=[binx, biny]).statistic
+                                    end_day_scooters_locations[:, 1],
+                                    None, 'count', bins=[binx, biny]).statistic
         assert end_day_scooters_locations.get_points().shape[0] == int(np.sum(state))
         return state
 
