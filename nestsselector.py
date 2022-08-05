@@ -146,12 +146,12 @@ class NestsSelector:
         avg_revenue: float = agent.get_average_revenue(iterations_num)
         self._show_dynamic_results(agent, avg_revenue)
 
-    def run_demo(self):
+    def run_demo(self, args):
         with open('consts.json', 'r') as f:
             consts = json.load(f)
 
         traffic_simulator: TrafficSimulator = TrafficSimulator(consts['samples_num'],
-                                                               SEARCH_RADIUS)
+                                                               SEARCH_RADIUS, const_rides=args.const_rides)
         incomes_factor: float = consts['incomes_factor']
         expenses_factor: float = consts['expenses_factor']
         incomes_expenses: IncomesExpenses = IncomesExpenses(incomes_factor,
@@ -211,12 +211,13 @@ if __name__ == '__main__':
                         default='d',
                         help="The type of data",
                         choices=NestsSelector.DEFAULT_DATA + NestsSelector.CUSTOM_DATA)
+    parser.add_argument("--const_rides", action="store_true", help="if true, it will use the same potential rides for each day")
     args = parser.parse_args()
     # TODO to be deleted in the future
-    if len(sys.argv) == 1:
-        ns = NestsSelector()
-        ns.run_demo()
-    else:
-        io = GraphicIO() if args.io in NestsSelector.GRAPHIC_IO else ConsoleIO()
-        ns = NestsSelector(io)
-        ns.run()
+    # if len(sys.argv) == 1:
+    ns = NestsSelector()
+    ns.run_demo(args)
+    # else:
+    #     io = GraphicIO() if args.io in NestsSelector.GRAPHIC_IO else ConsoleIO()
+    #     ns = NestsSelector(io)
+    #     ns.run()
