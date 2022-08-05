@@ -1,7 +1,7 @@
 from agents.agent import AgentInfo
 from agents.dynamicagent import DynamicAgent
 from agents.staticagent import StaticAgent
-from agents.dynamicagents.dynamicrlagent import DynamicRLAgent
+from agents.dynamicagents.ddpg.ddpg_agent import DdpgAgent
 from agents.dynamicagents.humanagent import HumanAgent
 from agents.dynamicagents.MinExpensesAgent import MinExpensesAgent
 from agents.staticagents.staticrlagent import StaticRLAgent
@@ -23,7 +23,7 @@ class AgentsFactory:
     @staticmethod
     def build_dynamic_agent(choice: str, agent_info: AgentInfo) -> DynamicAgent:
         if choice == AgentsFactory.AGENT_DYNAMIC_RL:
-            return DynamicRLAgent(agent_info)
+            return DdpgAgent(agent_info)
         elif choice == AgentsFactory.AGENT_DYNAMIC_HUMAN:
             return HumanAgent(agent_info)
         if choice == AgentsFactory.AGENT_DYNAMIC_MIN_EXPENSES:

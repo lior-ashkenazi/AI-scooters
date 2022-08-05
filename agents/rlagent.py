@@ -17,5 +17,5 @@ class ReinforcementLearningAgent(Agent):
         pass
 
     @abstractmethod
-    def get_action(self) -> np.ndarray:
+    def get_action(self, state: np.ndarray, evaluate: bool) -> np.ndarray:
         pass
