@@ -17,7 +17,7 @@ from data.trafficgenerator import TrafficGenerator
 
 
 class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
-    def __init__(self, env_agent_info, actor_lr=1e-4, critic_lr=2e-5,
+    def __init__(self, env_agent_info, actor_lr=1e-4, critic_lr=2e-4,
                  decay_factor=0.99, max_size=2000, target_update_rate=1e-3,
                  batch_size=64, noise=0.1):
         super(DdpgAgent, self).__init__(env_agent_info)
