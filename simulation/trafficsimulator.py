@@ -32,6 +32,7 @@ class TrafficSimulator:
             potential_rides: List[Ride] = self._traffic_generator.get_custom_data(self._rides_per_day_part)
         potential_rides.sort(key=lambda r: r.start_time)
         available_scooters: Map = scooters_initial_locations
+        starting_scooters_lst = []
         unavailable_scooters: PriorityQueue = PriorityQueue()
         rides_performed: List[Ride] = []
 
@@ -42,6 +43,7 @@ class TrafficSimulator:
                                           cur_time)
 
             # if ride can be performed, update data structures accordingly
+            starting_scooters_lst.append(ride.orig.to_numpy())
             if self.ride_is_feasible(ride, available_scooters):
                 unavailable_scooters.put(ride)
                 rides_performed.append(ride)
@@ -50,8 +52,8 @@ class TrafficSimulator:
         while unavailable_scooters.qsize() > 0:
             ride_done: Ride = unavailable_scooters.get()
             available_scooters.add_point(ride_done.dest)
-
-        return rides_performed, available_scooters
+        starting_scooters = Map(np.array(starting_scooters_lst))
+        return rides_performed, available_scooters, starting_scooters
 
     def ride_is_feasible(self, ride: Ride, available_scooters: Map) -> bool:
         nearest_point: Optional[Point] = available_scooters.\

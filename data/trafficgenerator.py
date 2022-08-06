@@ -30,8 +30,8 @@ class TrafficGenerator:
 
     class DayPart(Enum):
         MORNING: int = 1
-        AFTERNOON: int = 2
-        EVENING: int = 3
+        # AFTERNOON: int = 2
+        # EVENING: int = 3
 
     class Zone(Enum):
         RESIDENTIAL: int = 1

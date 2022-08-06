@@ -5,6 +5,8 @@ from tensorflow.keras.optimizers import Adam
 import numpy as np
 from scipy.stats import binned_statistic_2d
 from typing import List, Tuple
+import random
+import itertools as it
 
 from agents.dynamicagents.ddpg.buffer import ReplayBuffer
 from agents.dynamicagents.ddpg.networks import ActorNetwork, CriticNetwork
@@ -18,13 +20,13 @@ from data.trafficgenerator import TrafficGenerator
 from programio.visualizer import Visualizer
 
 class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
-    def __init__(self, env_agent_info, actor_lr=1e-5, critic_lr=2e-5,
-                 decay_factor=0.1, max_size=20000, target_update_rate=1e-5,
+    def __init__(self, env_agent_info, actor_lr=1e-4, critic_lr=2e-4,
+                 decay_factor=0.1, max_size=20000, target_update_rate=1e-3,
                  batch_size=64, noise=0.001):
         super(DdpgAgent, self).__init__(env_agent_info)
         self.decay_factor = decay_factor
         self.target_update_rate = target_update_rate
-        input_shape = (self.agent_info.grid_len, self.agent_info.grid_len)
+        input_shape = (self.agent_info.grid_len, self.agent_info.grid_len, 1)
         self.n_actions = len(self.agent_info.optional_nests)
         self.memory = ReplayBuffer(max_size, input_shape, self.n_actions)
         self.batch_size = batch_size
@@ -81,7 +83,6 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
 
     def get_action(self, state, evaluate=False):
         actor_input = tf.convert_to_tensor([state], dtype=tf.float32)
-        actor_input = tf.expand_dims(actor_input, axis=-1)
         action = self.actor(actor_input)
         action = action.numpy()
         if not evaluate:
@@ -103,9 +104,7 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
         state, action, reward, next_state = self.memory.sample_buffer(self.batch_size)
 
         states = tf.convert_to_tensor(state, dtype=tf.float32)
-        states = tf.expand_dims(states, axis=-1)
         next_states = tf.convert_to_tensor(next_state, dtype=tf.float32)
-        next_states = tf.expand_dims(next_states, axis=-1)
         rewards = tf.convert_to_tensor(reward, dtype=tf.float32)
         actions = tf.convert_to_tensor(action, dtype=tf.float32)
 
@@ -134,23 +133,44 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
 
         self.update_network_parameters()
 
-    def get_state(self, end_day_scooters_locations: Map, normalize=True) -> np.ndarray:
+    def get_state(self, end_day_scooters_locations: Map, potential_starts: Map, normalize=True) -> np.ndarray:
         binx: np.ndarray
         biny: np.ndarray
         binx, biny = TrafficGenerator.get_coordinates_bins(self.agent_info.grid_len)
-        state = binned_statistic_2d(end_day_scooters_locations[:, 0],
+        state_end = binned_statistic_2d(end_day_scooters_locations.get_points()[..., 0],
+                                    end_day_scooters_locations.get_points()[..., 1],
+                                    None, 'count', bins=[binx, biny]).statistic
+        state_potential_start = binned_statistic_2d(potential_starts[:, 0],
+                                        potential_starts[:, 1],
+                                        None, 'count', bins=[binx, biny]).statistic
+        assert end_day_scooters_locations.get_points().shape[0] == int(np.sum(state_end))
+        if normalize:
+            state_end /= np.sum(state_end)
+            state_potential_start /= np.sum(state_potential_start)
+            # print(state_potential_start)
+        state = np.stack([state_end, state_potential_start], axis=-1)
+        return np.expand_dims(state_potential_start, axis=-1)
+
+
+    def get_half_state(self, end_day_scooters_locations: Map, normalize=True) -> np.ndarray:
+        binx: np.ndarray
+        biny: np.ndarray
+        binx, biny = TrafficGenerator.get_coordinates_bins(self.agent_info.grid_len)
+        state_end = binned_statistic_2d(end_day_scooters_locations[:, 0],
                                     end_day_scooters_locations[:, 1],
                                     None, 'count', bins=[binx, biny]).statistic
-        assert end_day_scooters_locations.get_points().shape[0] == int(np.sum(state))
         if normalize:
-            state /= np.sum(state)
-        return state
+            state_end /= np.sum(state_end)
+        return state_end
 
     def get_start_state(self, normalize=True) -> (Map, np.ndarray):
-        start_scooters_locations: Map = TrafficGenerator.get_random_end_day_scooters_locations(
-            self.agent_info.scooters_num)
-        start_state: np.ndarray = self.get_state(start_scooters_locations, normalize=normalize)
-        return start_scooters_locations, start_state
+        end_day_scooters_locations: Map = TrafficGenerator.get_random_end_day_scooters_locations(self.agent_info.scooters_num)
+        end_day_state = self.get_half_state(end_day_scooters_locations)
+        potential_start = np.ones_like(end_day_state)
+        potential_start /= np.sum(potential_start)
+        state = np.stack([end_day_state, potential_start], axis=-1)
+        return end_day_scooters_locations, np.expand_dims(potential_start, axis=-1)
+        # return end_day_scooters_locations, state
 
     def get_nests_spread(self, action: np.ndarray) -> List[NestAllocation]:
         # we assume that scooters_locations is an action and not a Map type
@@ -182,16 +202,25 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
             get_scooters_location_from_nests_spread(prev_nests_spread)
 
         # get simulation results - rides completed and scooters final location:
-        result: Tuple[List[Ride], Map] = self.agent_info. \
+        result: Tuple[List[Ride], Map, Map] = self.agent_info. \
             traffic_simulator.get_simulation_result(prev_nests_locations)
         rides_completed: List[Ride] = result[0]
         next_day_locations: Map = result[1]
-        next_state: np.ndarray = self.get_state(next_day_locations)
+        potential_starts: Map = result[2]
+        next_state: np.ndarray = self.get_state(next_day_locations, potential_starts)
 
         # compute revenue
         reward: float = self.agent_info.incomes_expenses.calculate_revenue(
             rides_completed, prev_scooters_locations, prev_nests_locations)
         return prev_nests_spread, next_day_locations, next_state, reward, rides_completed
+
+    def get_random_nest_spread(self):
+        possible_scooters_spread = [comb for comb in
+                                    it.combinations_with_replacement(
+                                        range(self.agent_info.scooters_num + 1),
+                                        len(self.agent_info.optional_nests))
+                                    if sum(comb) == self.agent_info.scooters_num]
+        return np.array(random.choice(possible_scooters_spread))
 
     def learn(self, num_games, game_len, visualize):
         best_score = float('-inf')
@@ -235,20 +264,23 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
                 state = next_state
                 scooters_locations = next_day_scooters_locations
 
-            if visualize and (i == num_games - 1):
-                vis = Visualizer(rides_list=total_rides,
-                                 nests_list=total_nest_allocations,
-                                 revenue_list=total_rewards)
-                vis.visualise()
+            # if visualize and (i == num_games - 1):
+            #     vis = Visualizer(rides_list=total_rides,
+            #                      nests_list=total_nest_allocations,
+            #                      revenue_list=total_rewards)
+            #     vis.visualise()
 
             score /= game_len
             score_history.append(score)
-            avg_score = np.mean(score_history[-100:])
+            avg_score = np.mean(score_history[-7:])
 
             # if avg_score > best_score:
             #     best_score = avg_score
             #     if not load_checkpoint:
             #         self.save_models()
+            print(action)
+            print(np.max(action))
+            print(np.argmax(action))
             print('episode ', i, 'score %.5f' % score, 'avg score %.5f' % avg_score)
         return
 
