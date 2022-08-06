@@ -3,16 +3,19 @@ import datetime
 import numpy as np
 import tkinter
 from tkinter import *
-from typing import List
+from typing import List, Tuple
 from custom_gui import CustomTkinterMapView
+import heapq
+from data.trafficdatatypes import Ride
 
 TEL_AVIV_CENTER_COORDS = (32.0853, 34.7818)
-TIME_PER_HOUR = 300
 BLUE = "#3E69CB"
 RED = "#CB3E69"
 class Visualizer():
-    def __init__(self, rides_list: List[pd.DataFrame], nests_list:List[pd.DataFrame],
-                 revenue_list: List[int]):
+    def __init__(self, rides_list: List[List[Ride]], nests_list: List[Tuple],
+                 revenue_list: List[int],
+                 frame_speed=200,
+                 frames_per_day=24):
         """
         rides_list: List of pd.DataFrames. Each index i corresponds to rides
         of day number i. Must have following columns-
@@ -27,6 +30,10 @@ class Visualizer():
         # init tkinter GUI
         self.root = self.init_tk()
 
+        # variables for GUI
+        self.frame_speed = frame_speed
+        self.frames_per_day = frames_per_day
+
         # lists of data per day
         self.revenue_list = revenue_list
         self.rides_list = rides_list
@@ -34,8 +41,10 @@ class Visualizer():
 
         # updating data for display
         self.num_days = len(self.rides_list)
+        self.cur_day = None
         self.cur_nests = list()
-        self.cur_rides = list()
+        self.cur_rides_in = list()
+        self.cur_rides_out = list()
 
         # start the visualization
         self.day_loop(day_index=0)
@@ -49,7 +58,9 @@ class Visualizer():
         # Init left side: Stats
         self.stats = {k: 0 for k in ['Completed Rides',
                                      'Non-Completed Rides',
-                                     'Daily Revenue']}
+                                     'Daily Revenue',
+                                     'Day',
+                                     'Hour',]}
         left_frame = Frame(main_frame)
         left_frame.grid(row=0, column=0, sticky="nswe")
         self.stats_label = Label(left_frame,
@@ -67,73 +78,115 @@ class Visualizer():
         return root
 
     def day_loop(self, day_index):
+        print(f"Day {day_index}")
         if day_index >= self.num_days:
             # todo what to do when all days are done
             self.root.quit()
         else:
             # todo generate procedurally
-            rides, nests, revenue = self.rides_list[day_index], self.nests_list[day_index], self.revenue_list[day_index]
-            self.update_nests(nests=nests)
-            rides_by_hour = self.get_rides_by_hour(rides)
-            self.hour_loop(rides=rides_by_hour, hour=0)
-            self.update_stats(rides, revenue)
-            self.root.after(TIME_PER_HOUR * 25, self.day_loop, day_index + 1)
+            self.update_day_stats(day_index)
+            self.update_day_rides(self.rides_list[day_index])
+            self.update_day_nests(self.nests_list[day_index])
+            # todo revenue
 
-    def hour_loop(self, rides, hour):
-        if hour >= 24:
+            self.frame_loop(frame_index=0)
+
+            self.root.after(self.frame_speed * (self.frames_per_day + 1),
+                            self.day_loop, day_index + 1)
+
+    def frame_loop(self, frame_index):
+        print(f"Frame {frame_index}")
+        if frame_index >= self.frames_per_day:
             return
-        rides_for_hour = rides[hour][1]
-        self.update_rides(rides_for_hour)
-        self.root.after(TIME_PER_HOUR, self.hour_loop, rides, hour + 1)
+        cur_time = self.frame_to_cur_time(frame_index)
+        self.update_frame_rides(cur_time)
+        self._refresh_stats()
+        self.root.after(self.frame_speed,
+                        self.frame_loop, frame_index + 1)
 
-    def get_rides_by_hour(self, rides):
-        rides['hour'] = rides.starttime.apply(lambda x: x.hour)
-        rides['color'] = np.where(rides['completed'], BLUE, RED)
-        return list(rides.groupby('hour'))
+    def frame_to_cur_time(self, frame_index):
+        return (datetime.datetime.min +
+                datetime.timedelta(days=(float(frame_index) / self.frames_per_day))).time()
 
-    def update_nests(self, nests):
+    def update_day_nests(self, nests):
+        # delete yesterday's nests
         for nest in self.cur_nests:
             self.map_widget.delete(nest)
-        self.cur_nests = nests.apply(lambda x: self.map_widget.set_marker(*(x.location), text=x.num_scooters),axis=1)
+        # create today's nests
+        self.cur_nests = [self.map_widget.set_marker(*nest[0],
+                                                     text=nest[1])
+                          for nest in nests]
 
-    def update_rides(self, rides):
-        for ride in self.cur_rides:
+    def update_day_rides(self, rides):
+        # delete remaining rides from yesterday
+        for ride in self.cur_rides_out:
             self.map_widget.delete(ride)
-        self.cur_rides = rides.apply(lambda x: self.map_widget.set_path([x.orig, x.dest], color=x.color),axis=1)
+        self.cur_rides_out = list()
+
+        # order today's rides by start_time, as min heap
+        self.cur_rides_in = [(ride.start_time, i, ride)
+                             for i, ride in enumerate(rides)]
+        heapq.heapify(self.cur_rides_in)
+
+    def update_day_stats(self, day_index):
+        self.stats['Day'] = day_index
+        self.stats['Hour'] = 0
+        self._refresh_stats()
+
+    def update_frame_rides(self, cur_time):
+        # add new rides
+        print(cur_time)
+        while len(self.cur_rides_in) > 0 and self.cur_rides_in[0][0] <= cur_time:
+            # todo add color?
+            start_time, i, new_ride = heapq.heappop(self.cur_rides_in)
+            print(f"Adding ride with starttime: {start_time}")
+            ride_object = self.map_widget.set_path([new_ride.orig, new_ride.dest])
+            heapq.heappush(self.cur_rides_out, (new_ride.end_time, i, ride_object))
+
+        # remove old rides
+        while len(self.cur_rides_out) > 0 and self.cur_rides_out[0][0] <= cur_time:
+            # todo add color?
+            end_time, _, old_ride = heapq.heappop(self.cur_rides_out)
+            print(f"removing ride with endtime: {end_time}")
+            self.map_widget.delete(old_ride)
 
     def update_stats(self, rides, revenue):
         completed_rides = rides['completed'].sum()
         self.stats['Completed Rides'] = completed_rides
         self.stats['Non-Completed Rides'] = (len(rides) - completed_rides)
         self.stats['Daily Revenue'] = revenue
+        self._refresh_stats()
+
+    def _refresh_stats(self):
         self.stats_label.config(text='\n'.join([f'{k}: {v}\n' for k, v in self.stats.items()]))
+
 
 """
 test methods to generate random rides/nests 
 """
 def random_r():
     r = list()
-    c = datetime.datetime.now()
-    s = (32.0853, 34.7818)
-    for i in range(100):
-        c = c + datetime.timedelta(minutes=30)
-        r.append([c, c ,
-                  s + (np.random.random((2,)) - 0.5) / 50,
-                  s + (np.random.random((2,)) - 0.5) / 50,
-                 np.random.random() < 0.5])
-    r = pd.DataFrame(r, columns =['starttime', 'endtime', 'orig', 'dest', 'completed'])
+    for i in range(50):
+        a = datetime.time(hour=np.random.randint(low=0, high=22),
+                          minute=np.random.randint(low=0, high=59),
+                          second=np.random.randint(low=0, high=59))
+        b = datetime.time(hour=np.random.randint(low=0, high=22),
+                          minute=np.random.randint(low=0, high=59),
+                          second=np.random.randint(low=0, high=59))
+        r.append(Ride(orig=TEL_AVIV_CENTER_COORDS + (np.random.random((2,)) - 0.5) / 50,
+                      dest=TEL_AVIV_CENTER_COORDS + (np.random.random((2,)) - 0.5) / 50,
+                      start_time=min(a, b),
+                      end_time=max(a, b)))
     return r
 
 def random_n():
-    s = (32.0853, 34.7818)
     n = list()
     for i in range(5):
-        n.append([s + (np.random.random((2,)) - 0.5) / 50, 10])
-    n = pd.DataFrame(n, columns =['location', 'num_scooters'])
+        n.append((TEL_AVIV_CENTER_COORDS + (np.random.random((2,)) - 0.5) / 50, 10))
     return n
 
 if __name__ == '__main__':
     rides_list = [random_r() for r in range(10)]
     nest_list = [random_n() for n in range(10)]
     revenue_list = [np.random.randint(10, 100) for i in range(10)]
-    a = Visualizer(rides_list, nest_list, revenue_list)
+    a = Visualizer(rides_list, nest_list, revenue_list, frame_speed=100, frames_per_day=24)
