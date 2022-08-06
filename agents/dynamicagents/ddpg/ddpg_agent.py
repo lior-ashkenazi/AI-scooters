@@ -192,9 +192,7 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
             rides_completed, prev_scooters_locations, prev_nests_locations)
         return next_day_locations, next_state, reward, rides_completed
 
-    def learn(self):
-        n_games = 100
-        game_len = 50
+    def learn(self, num_games, game_len):
         best_score = float('-inf')
         score_history = []
         load_checkpoint = False
@@ -206,7 +204,7 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
         else:
             evaluate = False
 
-        for i in range(n_games):
+        for i in range(num_games):
             scooters_locations: Map
             state: np.ndarray
             scooters_locations, state = self.get_start_state()
@@ -225,7 +223,7 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
                     self.learn_batch()
                 state = next_state
                 scooters_locations = next_day_scooters_locations
-            score /= n_games
+            score /= num_games
             score_history.append(score)
             avg_score = np.mean(score_history[-100:])
 

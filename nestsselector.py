@@ -172,7 +172,7 @@ class NestsSelector:
 
         agent: DynamicAgent = AgentsFactory.build_dynamic_agent(agent_chosen, agent_info)
 
-        agent.learn()
+        agent.learn(num_games=args.num_games, game_len=args.game_len)
 
     def _show_static_results(self, agent: StaticAgent,
                              spread_points: List[NestAllocation],
@@ -212,6 +212,9 @@ if __name__ == '__main__':
                         help="The type of data",
                         choices=NestsSelector.DEFAULT_DATA + NestsSelector.CUSTOM_DATA)
     parser.add_argument("--const_rides", action="store_true", help="if true, it will use the same potential rides for each day")
+    parser.add_argument("--num_games", action="store", type=int, help="number of games, each one starts with a random location")
+    parser.add_argument("--game_len", action="store", type=int,
+                        help="number of days in a game")
     args = parser.parse_args()
     # TODO to be deleted in the future
     # if len(sys.argv) == 1:
