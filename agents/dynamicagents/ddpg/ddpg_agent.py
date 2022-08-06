@@ -190,9 +190,9 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
         # compute revenue
         reward: float = self.agent_info.incomes_expenses.calculate_revenue(
             rides_completed, prev_scooters_locations, prev_nests_locations)
-        return next_day_locations, next_state, reward, rides_completed
+        return prev_nests_spread, next_day_locations, next_state, reward, rides_completed
 
-    def learn(self, num_games, game_len):
+    def learn(self, num_games, game_len, visualize):
         best_score = float('-inf')
         score_history = []
         load_checkpoint = False
@@ -208,22 +208,32 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
             scooters_locations: Map
             state: np.ndarray
             scooters_locations, state = self.get_start_state()
+
+            total_rides: List[List[Ride]] = []
+            total_nest_allocations: List[List[NestAllocation]] = []
+            total_rewards: List[float] = []
+
             score = 0
 
             for step_idx in range(game_len):
                 action: np.ndarray = self.get_action(state, evaluate)
+                pre_nests_spread: List[NestAllocation]
                 next_day_scooters_locations: Map
                 next_state: np.ndarray
                 reward: float
                 rides_completed: List[Ride]
-                next_day_scooters_locations, next_state, reward, rides_completed = self.perform_step(scooters_locations, action)
+                pre_nests_spread, next_day_scooters_locations, next_state, reward, rides_completed = \
+                    self.perform_step(scooters_locations, action)
+                total_rides.append(rides_completed)
+                total_rewards.append(reward)
+                total_nest_allocations.append(pre_nests_spread)
                 score += reward
                 self.remember(state, action, reward, next_state)
                 if not evaluate:
                     self.learn_batch()
                 state = next_state
                 scooters_locations = next_day_scooters_locations
-            score /= num_games
+            score /= game_len
             score_history.append(score)
             avg_score = np.mean(score_history[-100:])
 
