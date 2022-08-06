@@ -125,6 +125,7 @@ class CustomCanvasPositionMarker(CanvasPositionMarker):
 
             self.map_widget.manage_z_order()
 
+
 class CustomTkinterMapView(TkinterMapView):
     def set_path(self, position_list: list, **kwargs) -> CanvasPath:
         path = CustomCanvasPath(self, position_list, **kwargs)

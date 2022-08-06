@@ -4,7 +4,7 @@ import numpy as np
 import tkinter
 from tkinter import *
 from typing import List, Tuple
-from custom_gui import CustomTkinterMapView
+from programio.custom_gui import CustomTkinterMapView
 import heapq
 from data.trafficdatatypes import Ride, NestAllocation, Point
 
@@ -13,7 +13,7 @@ BLUE = "#3E69CB"
 RED = "#CB3E69"
 class Visualizer():
     def __init__(self, rides_list: List[List[Ride]], nests_list: List[List[NestAllocation]],
-                 revenue_list: List[int],
+                 revenue_list: List[float],
                  frame_speed=200,
                  frames_per_day=24):
         """

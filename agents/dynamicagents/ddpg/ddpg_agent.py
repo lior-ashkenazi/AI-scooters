@@ -1,6 +1,7 @@
 import tensorflow as tf
 import tensorflow.keras as keras
 from tensorflow.keras.optimizers import Adam
+
 import numpy as np
 from scipy.stats import binned_statistic_2d
 from typing import List, Tuple
@@ -14,7 +15,7 @@ from agents.dynamicagent import DynamicAgent
 from agents.rlagent import ReinforcementLearningAgent
 from data.trafficdatatypes import Map, NestAllocation, Ride
 from data.trafficgenerator import TrafficGenerator
-
+from programio.visualizer import Visualizer
 
 class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
     def __init__(self, env_agent_info, actor_lr=1e-4, critic_lr=2e-4,
@@ -233,6 +234,13 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
                     self.learn_batch()
                 state = next_state
                 scooters_locations = next_day_scooters_locations
+
+            if visualize:
+                vis = Visualizer(rides_list=total_rides,
+                                 nests_list=total_nest_allocations,
+                                 revenue_list=total_rewards)
+                vis.visualise()
+
             score /= game_len
             score_history.append(score)
             avg_score = np.mean(score_history[-100:])
