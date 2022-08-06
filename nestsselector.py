@@ -100,7 +100,7 @@ class NestsSelector:
         nests_num: int = int(self.io.get_user_numerical_choice(
             GET_NUMBER_OF_NESTS_PROMPT, MIN_NUMBER_OF_NESTS, MAX_NUMBER_OF_NESTS))
         optional_nests: List[Point] = self. \
-            traffic_generator.get_random_nests_locations(nests_num)
+            traffic_generator.get_optional_nests_locations(nests_num)
         scooters_num: int = int(self.io.get_user_numerical_choice(
             GET_NUMBER_OF_SCOOTER_PROMPT, MIN_NUMBER_OF_SCOOTERS,
             MAX_NUMBER_OF_SCOOTERS))
@@ -159,8 +159,8 @@ class NestsSelector:
         features_data: FeaturesData = self.features_data_generator. \
             generate_features_data()
         learning_time = consts['learning_time']
-        optional_nests: List[Point] = self.traffic_generator.get_not_random_locations(
-            consts['optional_nests'])
+        optional_nests: List[Point] = self.traffic_generator. \
+            get_not_random_nests_locations(consts['optional_nests'])
         scooters_num: int = consts['scooters_num']
         epsilon = consts['epsilon']
         grid_len = consts['grid_len']
@@ -173,7 +173,6 @@ class NestsSelector:
         agent: DynamicAgent = AgentsFactory.build_dynamic_agent(agent_chosen, agent_info)
 
         agent.learn()
-
 
     def _show_static_results(self, agent: StaticAgent,
                              spread_points: List[NestAllocation],
