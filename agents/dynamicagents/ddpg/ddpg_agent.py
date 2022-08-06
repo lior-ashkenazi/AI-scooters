@@ -18,9 +18,9 @@ from data.trafficgenerator import TrafficGenerator
 from programio.visualizer import Visualizer
 
 class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
-    def __init__(self, env_agent_info, actor_lr=1e-4, critic_lr=2e-4,
-                 decay_factor=0.99, max_size=2000, target_update_rate=1e-3,
-                 batch_size=64, noise=0.1):
+    def __init__(self, env_agent_info, actor_lr=1e-5, critic_lr=2e-5,
+                 decay_factor=0.1, max_size=20000, target_update_rate=1e-5,
+                 batch_size=64, noise=0.001):
         super(DdpgAgent, self).__init__(env_agent_info)
         self.decay_factor = decay_factor
         self.target_update_rate = target_update_rate
@@ -165,7 +165,7 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
         data_fraction, data_int = np.modf(data)
 
         round_up_amount = np.sum(data_fraction)
-        assert np.isclose(round_up_amount, round(round_up_amount))
+        # assert np.isclose(round_up_amount, round(round_up_amount)), f"{data}"
         round_up_amount = round(round_up_amount)
 
         data_fraction_flat, data_int_flat = data_fraction.flatten(), data_int.flatten()
@@ -235,7 +235,7 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
                 state = next_state
                 scooters_locations = next_day_scooters_locations
 
-            if visualize:
+            if visualize and (i == num_games - 1):
                 vis = Visualizer(rides_list=total_rides,
                                  nests_list=total_nest_allocations,
                                  revenue_list=total_rewards)
@@ -245,10 +245,10 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
             score_history.append(score)
             avg_score = np.mean(score_history[-100:])
 
-            if avg_score > best_score:
-                best_score = avg_score
-                if not load_checkpoint:
-                    self.save_models()
+            # if avg_score > best_score:
+            #     best_score = avg_score
+            #     if not load_checkpoint:
+            #         self.save_models()
             print('episode ', i, 'score %.5f' % score, 'avg score %.5f' % avg_score)
         return
 

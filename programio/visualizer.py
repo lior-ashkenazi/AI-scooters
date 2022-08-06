@@ -130,6 +130,7 @@ class Visualizer():
     def update_day_stats(self, day_index):
         self.stats['Day'] = day_index
         self.stats['Hour'] = 0
+        self.stats['Daily Revenue'] = str(round(self.revenue_list[day_index], 2))
         self._refresh_stats()
 
     def update_frame_rides(self, cur_time):
@@ -137,7 +138,8 @@ class Visualizer():
         while len(self.cur_rides_in) > 0 and self.cur_rides_in[0][0] <= cur_time:
             # todo add color?
             start_time, i, new_ride = heapq.heappop(self.cur_rides_in)
-            ride_object = self.map_widget.set_path([new_ride.orig, new_ride.dest])
+            ride_object = self.map_widget.set_path([(new_ride.orig.x, new_ride.orig.y),
+                                                    (new_ride.dest.x, new_ride.dest.y)])
             heapq.heappush(self.cur_rides_out, (new_ride.end_time, i, ride_object))
 
         # remove old rides
@@ -182,10 +184,3 @@ def random_n():
         n.append(NestAllocation(location=Point(*location),
                                 scooters_num=10))
     return n
-
-if __name__ == '__main__':
-    rides_list = [random_r() for r in range(10)]
-    nest_list = [random_n() for n in range(10)]
-    revenue_list = [np.random.randint(10, 100) for i in range(10)]
-    a = Visualizer(rides_list, nest_list, revenue_list, frame_speed=200, frames_per_day=24)
-    a.visualise()
