@@ -26,6 +26,7 @@ class TrafficGenerator:
     MIN_CUSTOM_DATA: int = 0
     MAX_CUSTOM_DATA: int = 100000
 
+    MIN_DIST = 0.4
 
     class DayPart(Enum):
         MORNING: int = 1
@@ -107,17 +108,17 @@ class TrafficGenerator:
     def _generate_rides_day_part(self, day_part: int, samples_num: int) -> List[Ride]:
         rides = []
         for i in range(samples_num):
+            ride_type: int = self._draw_ride_type(config.DAY_PART_RIDES_PROB[day_part])
+
+            orig_zone: int
+            dest_zone: int
+            orig_zone, dest_zone = config.RIDE_TYPE_TO_ZONES[ride_type]
+
+            orig_point: Point
+            dest_point: Point
+            orig_point, dest_point = self._sample_points(orig_zone, dest_zone)
+
             start_time: dt.time = self.time_generator.generate_start_time(day_part)
-
-            ride_type: TrafficGenerator.RideType = TrafficGenerator. \
-                _draw_ride_type(config.DAY_PART_RIDES_PROB[day_part])
-
-            orig: int
-            dest: int
-            orig, dest = config.RIDE_TYPE_TO_ZONES[ride_type]
-
-            orig_point: Point = Point(*self.coords_sampler.sample_zone_coordinates(orig))
-            dest_point: Point = Point(*self.coords_sampler.sample_zone_coordinates(dest))
 
             end_time: dt.time = self.time_generator.generate_end_time(orig_point,
                                                                       dest_point,
@@ -129,10 +130,17 @@ class TrafficGenerator:
 
         return rides
 
-    @staticmethod
-    def _draw_ride_type(hour_prob_vec):
+    def _draw_ride_type(self, hour_prob_vec: np.ndarray) -> int:
         return np.random.choice([ride_type.value for ride_type in TrafficGenerator.RideType],
                                 p=hour_prob_vec)
+
+    def _sample_points(self, orig_zone: int, dest_zone: int) -> Tuple[Point, Point]:
+        while True:
+            orig_point: Point = Point(*self.coords_sampler.sample_zone_coordinates(orig_zone))
+            dest_point: Point = Point(*self.coords_sampler.sample_zone_coordinates(dest_zone))
+            dist = point_dist(orig_point, dest_point)
+            if TrafficGenerator.MIN_DIST <= dist:
+                return orig_point, dest_point
 
     # TODO these methods should not be class methods or static methods. For that to happen,
     #  we need to ensure that we always use TrafficGenerator as an instance and not as a class,
@@ -154,7 +162,7 @@ class TrafficGenerator:
         return [Point(x, y) for x, y in optional_nests]
 
     @staticmethod
-    def get_random_end_day_scooters_locations(scooters_num: int):
+    def get_random_end_day_scooters_locations(scooters_num: int) -> Map:
         """
         generates random scooters location in the an end of a day
         """
