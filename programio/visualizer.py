@@ -6,13 +6,13 @@ from tkinter import *
 from typing import List, Tuple
 from custom_gui import CustomTkinterMapView
 import heapq
-from data.trafficdatatypes import Ride
+from data.trafficdatatypes import Ride, NestAllocation, Point
 
 TEL_AVIV_CENTER_COORDS = (32.0853, 34.7818)
 BLUE = "#3E69CB"
 RED = "#CB3E69"
 class Visualizer():
-    def __init__(self, rides_list: List[List[Ride]], nests_list: List[Tuple],
+    def __init__(self, rides_list: List[List[Ride]], nests_list: List[List[NestAllocation]],
                  revenue_list: List[int],
                  frame_speed=200,
                  frames_per_day=24):
@@ -46,7 +46,7 @@ class Visualizer():
         self.cur_rides_in = list()
         self.cur_rides_out = list()
 
-        # start the visualization
+    def visualise(self):
         self.day_loop(day_index=0)
         self.root.mainloop()
 
@@ -78,7 +78,6 @@ class Visualizer():
         return root
 
     def day_loop(self, day_index):
-        print(f"Day {day_index}")
         if day_index >= self.num_days:
             # todo what to do when all days are done
             self.root.quit()
@@ -95,26 +94,26 @@ class Visualizer():
                             self.day_loop, day_index + 1)
 
     def frame_loop(self, frame_index):
-        print(f"Frame {frame_index}")
         if frame_index >= self.frames_per_day:
             return
         cur_time = self.frame_to_cur_time(frame_index)
         self.update_frame_rides(cur_time)
         self._refresh_stats()
+        self.stats['Hour'] += 1
         self.root.after(self.frame_speed,
                         self.frame_loop, frame_index + 1)
 
     def frame_to_cur_time(self, frame_index):
         return (datetime.datetime.min +
-                datetime.timedelta(days=(float(frame_index) / self.frames_per_day))).time()
+                datetime.timedelta(days=(float(frame_index + 1) / self.frames_per_day))).time()
 
     def update_day_nests(self, nests):
         # delete yesterday's nests
         for nest in self.cur_nests:
             self.map_widget.delete(nest)
         # create today's nests
-        self.cur_nests = [self.map_widget.set_marker(*nest[0],
-                                                     text=nest[1])
+        self.cur_nests = [self.map_widget.set_marker(nest.location.x, nest.location.y,
+                                                     text=str(nest.scooters_num))
                           for nest in nests]
 
     def update_day_rides(self, rides):
@@ -135,19 +134,16 @@ class Visualizer():
 
     def update_frame_rides(self, cur_time):
         # add new rides
-        print(cur_time)
         while len(self.cur_rides_in) > 0 and self.cur_rides_in[0][0] <= cur_time:
             # todo add color?
             start_time, i, new_ride = heapq.heappop(self.cur_rides_in)
-            print(f"Adding ride with starttime: {start_time}")
             ride_object = self.map_widget.set_path([new_ride.orig, new_ride.dest])
             heapq.heappush(self.cur_rides_out, (new_ride.end_time, i, ride_object))
 
         # remove old rides
-        while len(self.cur_rides_out) > 0 and self.cur_rides_out[0][0] <= cur_time:
+        while len(self.cur_rides_out) > 0 and self.cur_rides_out[0][0] < cur_time:
             # todo add color?
             end_time, _, old_ride = heapq.heappop(self.cur_rides_out)
-            print(f"removing ride with endtime: {end_time}")
             self.map_widget.delete(old_ride)
 
     def update_stats(self, rides, revenue):
@@ -182,11 +178,14 @@ def random_r():
 def random_n():
     n = list()
     for i in range(5):
-        n.append((TEL_AVIV_CENTER_COORDS + (np.random.random((2,)) - 0.5) / 50, 10))
+        location = TEL_AVIV_CENTER_COORDS + ((np.random.random((2,)) - 0.5) / 50)
+        n.append(NestAllocation(location=Point(*location),
+                                scooters_num=10))
     return n
 
 if __name__ == '__main__':
     rides_list = [random_r() for r in range(10)]
     nest_list = [random_n() for n in range(10)]
     revenue_list = [np.random.randint(10, 100) for i in range(10)]
-    a = Visualizer(rides_list, nest_list, revenue_list, frame_speed=100, frames_per_day=24)
+    a = Visualizer(rides_list, nest_list, revenue_list, frame_speed=200, frames_per_day=24)
+    a.visualise()
