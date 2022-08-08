@@ -151,7 +151,8 @@ class NestsSelector:
             consts = json.load(f)
 
         traffic_simulator: TrafficSimulator = TrafficSimulator(consts['samples_num'],
-                                                               SEARCH_RADIUS, const_rides=args.const_rides)
+                                                               SEARCH_RADIUS,
+                                                               const_rides=args.const_rides)
         incomes_factor: float = consts['incomes_factor']
         expenses_factor: float = consts['expenses_factor']
         incomes_expenses: IncomesExpenses = IncomesExpenses(incomes_factor,
@@ -172,7 +173,15 @@ class NestsSelector:
 
         agent: DynamicAgent = AgentsFactory.build_dynamic_agent(agent_chosen, agent_info)
 
-        agent.learn(num_games=args.num_games, game_len=args.game_len, visualize=args.visualize)
+        agent.learn(num_games=args.num_games, game_len=args.game_len)
+
+        # agent_chosen = "genetic_algorithm"
+        #
+        # agent: StaticAgent = AgentsFactory.build_static_agent(agent_chosen, agent_info)
+        #
+        # spread_points, revenue = agent.spread_scooters()
+        #
+        # self._show_static_results(agent, spread_points, revenue)
 
     def _show_static_results(self, agent: StaticAgent,
                              spread_points: List[NestAllocation],
@@ -211,9 +220,10 @@ if __name__ == '__main__':
                         default='d',
                         help="The type of data",
                         choices=NestsSelector.DEFAULT_DATA + NestsSelector.CUSTOM_DATA)
-    parser.add_argument("--const_rides", action="store_true", help="if true, it will use the same potential rides for each day")
-    parser.add_argument("--visualize", action="store_true")
-    parser.add_argument("--num_games", action="store", type=int, help="number of games, each one starts with a random location")
+    parser.add_argument("--const_rides", action="store_true",
+                        help="if true, it will use the same potential rides for each day")
+    parser.add_argument("--num_games", action="store", type=int,
+                        help="number of games, each one starts with a random location")
     parser.add_argument("--game_len", action="store", type=int,
                         help="number of days in a game")
     args = parser.parse_args()
