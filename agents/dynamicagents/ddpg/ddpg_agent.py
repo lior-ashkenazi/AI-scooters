@@ -22,8 +22,8 @@ from programio.visualizer import Visualizer
 
 
 class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
-    def __init__(self, env_agent_info, actor_lr=1e-4, critic_lr=1e-1,
-                 decay_factor=0.1, max_size=2000, target_update_rate=1e-3,
+    def __init__(self, env_agent_info, actor_lr=1e-3, critic_lr=1e-1,
+                 decay_factor=0.1, max_size=2000, target_update_rate=1e-2,
                  batch_size=64, noise=0.001):
         super(DdpgAgent, self).__init__(env_agent_info)
         self.decay_factor = decay_factor
@@ -181,7 +181,7 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
         # we assume that scooters_locations is an action and not a Map type
         # discretize the action-
         discrete_action = self.discretize(action.copy())
-        print(discrete_action)
+        # print(discrete_action)
         return [NestAllocation(self.agent_info.optional_nests[i], scooters_num)
                 for i, scooters_num in enumerate(discrete_action)]
 
@@ -212,8 +212,8 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
             traffic_simulator.get_simulation_result(prev_nests_locations)
         rides_completed: List[Ride] = result[0]
         start_points = [ride.orig for ride in rides_completed]
-        plt.scatter([p.x for p in start_points], [p.y for p in start_points])
-        plt.show()
+        # plt.scatter([p.x for p in start_points], [p.y for p in start_points])
+        # plt.show()
         next_day_locations: Map = result[1]
         potential_starts: Map = result[2]
         next_state: np.ndarray = self.get_state(next_day_locations, potential_starts)
@@ -257,10 +257,11 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
             score = 0
 
             for step_idx in range(game_len):
-                # action: np.ndarray = self.get_action(state, evaluate)
-                bad_nest = max(0, 0 - i * 0.008)
-                other_nest = (1 - 4 * bad_nest) / 3
-                action = np.array([other_nest, other_nest, other_nest, bad_nest, bad_nest, bad_nest, bad_nest])
+                action: np.ndarray = self.get_action(state, evaluate)
+                # bad_nest = max(0, 0 - i * 0.008)
+                # other_nest = (1 - 4 * bad_nest) / 3
+                # action = np.array([other_nest, other_nest, other_nest, bad_nest, bad_nest, bad_nest, bad_nest])
+                # action = np.array([0.25, 0.5, 0.25, 0, 0, 0, 0])
                 pre_nests_spread: List[NestAllocation]
                 next_day_scooters_locations: Map
                 next_state: np.ndarray
