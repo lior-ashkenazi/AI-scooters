@@ -43,8 +43,9 @@ class Visualizer():
         self.num_days = len(self.rides_list)
         self.cur_day = None
         self.cur_nests = list()
-        self.cur_rides_in = list()
-        self.cur_rides_out = list()
+        # self.cur_rides_in = list()
+        # self.cur_rides_out = list()
+        self.cur_rides = list()
 
     def visualise(self):
         self.day_loop(day_index=0)
@@ -88,20 +89,23 @@ class Visualizer():
             self.update_day_nests(self.nests_list[day_index])
             # todo revenue
 
-            self.frame_loop(frame_index=0)
+            # self.frame_loop(frame_index=0)
 
-            self.root.after(self.frame_speed * (self.frames_per_day + 1),
+            # self.root.after(self.frame_speed * (self.frames_per_day + 1),
+            #                 self.day_loop, day_index + 1)
+            self.root.after(self.frame_speed,
                             self.day_loop, day_index + 1)
 
-    def frame_loop(self, frame_index):
-        if frame_index >= self.frames_per_day:
-            return
-        cur_time = self.frame_to_cur_time(frame_index)
-        self.update_frame_rides(cur_time)
-        self._refresh_stats()
-        self.stats['Hour'] += 1
-        self.root.after(self.frame_speed,
-                        self.frame_loop, frame_index + 1)
+
+    # def frame_loop(self, frame_index):
+    #     if frame_index >= self.frames_per_day:
+    #         return
+    #     cur_time = self.frame_to_cur_time(frame_index)
+    #     self.update_frame_rides(cur_time)
+    #     self._refresh_stats()
+    #     self.stats['Hour'] += 1
+    #     self.root.after(self.frame_speed,
+    #                     self.frame_loop, frame_index + 1)
 
     def frame_to_cur_time(self, frame_index):
         return (datetime.datetime.min +
@@ -117,15 +121,23 @@ class Visualizer():
                           for nest in nests]
 
     def update_day_rides(self, rides):
-        # delete remaining rides from yesterday
-        for ride in self.cur_rides_out:
+        # delete yesterday's rides
+        for ride in self.cur_rides:
             self.map_widget.delete(ride)
-        self.cur_rides_out = list()
+        # create today's rides
+        self.cur_rides = [self.map_widget.set_path([(new_ride.orig.x, new_ride.orig.y),
+                                                    (new_ride.dest.x, new_ride.dest.y)])
+                          for new_ride in rides]
 
-        # order today's rides by start_time, as min heap
-        self.cur_rides_in = [(ride.start_time, i, ride)
-                             for i, ride in enumerate(rides)]
-        heapq.heapify(self.cur_rides_in)
+        # # delete remaining rides from yesterday
+        # for ride in self.cur_rides_out:
+        #     self.map_widget.delete(ride)
+        # self.cur_rides_out = list()
+        #
+        # # order today's rides by start_time, as min heap
+        # self.cur_rides_in = [(ride.start_time, i, ride)
+        #                      for i, ride in enumerate(rides)]
+        # heapq.heapify(self.cur_rides_in)
 
     def update_day_stats(self, day_index):
         self.stats['Day'] = day_index
@@ -171,16 +183,30 @@ def random_r():
         b = datetime.time(hour=np.random.randint(low=0, high=22),
                           minute=np.random.randint(low=0, high=59),
                           second=np.random.randint(low=0, high=59))
-        r.append(Ride(orig=TEL_AVIV_CENTER_COORDS + (np.random.random((2,)) - 0.5) / 50,
-                      dest=TEL_AVIV_CENTER_COORDS + (np.random.random((2,)) - 0.5) / 50,
+        r.append(Ride(orig=Point(*(TEL_AVIV_CENTER_COORDS + (np.random.random((2,)) - 0.5) / 50)),
+                      dest=Point(*(TEL_AVIV_CENTER_COORDS + (np.random.random((2,)) - 0.5) / 50)),
                       start_time=min(a, b),
                       end_time=max(a, b)))
     return r
 
 def random_n():
     n = list()
-    for i in range(5):
-        location = TEL_AVIV_CENTER_COORDS + ((np.random.random((2,)) - 0.5) / 50)
-        n.append(NestAllocation(location=Point(*location),
-                                scooters_num=10))
+    n = [
+        NestAllocation(location=Point(*(TEL_AVIV_CENTER_COORDS + np.array([0.01, 0.000]))),scooters_num=10),
+        NestAllocation(location=Point(*(TEL_AVIV_CENTER_COORDS + np.array([0.00, 0.01]))),scooters_num=10),
+        NestAllocation(location=Point(*(TEL_AVIV_CENTER_COORDS - np.array([0.01, 0.000]))),scooters_num=10),
+        NestAllocation(location=Point(*(TEL_AVIV_CENTER_COORDS - np.array([0.000, 0.01]))),scooters_num=10)
+    ]
+    # for i in range(5):
+    #     location = TEL_AVIV_CENTER_COORDS + ((np.random.random((2,)) - 0.5) / 50)
+    #     n.append(NestAllocation(location=Point(*location),
+    #                             scooters_num=10))
     return n
+
+if __name__ == '__main__':
+    num_days = 20
+    rides_list = [random_r() for r in range(num_days)]
+    nest_list = [random_n() for n in range(num_days)]
+    revenue_list = [np.random.randint(10, 100) for i in range(num_days)]
+    a = Visualizer(rides_list, nest_list, revenue_list, frame_speed=1000, frames_per_day=24)
+    a.visualise()

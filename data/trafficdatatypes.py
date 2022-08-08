@@ -39,18 +39,20 @@ def point_dist_np(a: np.ndarray, b: np.ndarray) -> float:
 
 
 def point_dist(a: Point, b: Point) -> float:
-    lat1 = radians(a.x)
-    lat2 = radians(b.x)
-    lon1 = radians(a.y)
-    lon2 = radians(a.y)
-
-    # Haversine formula
-    dlon = lon2 - lon1
-    dlat = lat2 - lat1
-    a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
-    c = 2 * asin(sqrt(a))
-
-    return c * EARTH_RADIUS  # Kilometers
+    # lat1 = radians(a.x)
+    # lat2 = radians(b.x)
+    # lon1 = radians(a.y)
+    # lon2 = radians(a.y)
+    #
+    # # Haversine formula
+    # dlon = lon2 - lon1
+    # dlat = lat2 - lat1
+    # a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
+    # c = 2 * asin(sqrt(a))
+    #
+    # return c * EARTH_RADIUS  # Kilometers
+    dist = np.linalg.norm(a.to_numpy()-b.to_numpy()) * 110
+    return dist
 
 
 def point_from_numpy(arr: np.ndarray) -> Point:

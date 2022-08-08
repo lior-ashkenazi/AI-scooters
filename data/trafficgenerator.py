@@ -10,6 +10,7 @@ from enum import Enum
 import datetime as dt
 
 import numpy as np
+import random
 
 GET_DEFAULT_DATA_COMPLEXITY_PROMPT = "Please type data complexity:"
 INDUSTRIAL_LOCATIONS_PATH = ""  # todo - download some data
@@ -95,15 +96,37 @@ class TrafficGenerator:
             - number of samples (that fits to the origin, destination, and start time)
         :return: all the samples created (list of rides)
         """
-        if not samples_num:
-            samples_num = int(self.io.get_user_numerical_choice(GET_CUSTOM_DATA_SAMPLES_NUMBER,
-                                                                TrafficGenerator.MIN_CUSTOM_DATA,
-                                                                TrafficGenerator.MAX_CUSTOM_DATA))
-
+        res = [32.0753, 34.7918]
+        com = [32.0953, 34.7718]
+        ind = [32.0753, 34.7718]
+        cov = np.array([[4.86247399e-06, 2.47087578e-06],
+                [2.47087578e-06, 3.38832923e-06]]) / 1000000
+        options = [(res, com), (com, res), (res, ind), (ind, res)]
         rides: List[Ride] = []
-        for day_part in [day_part.value for day_part in TrafficGenerator.DayPart]:
-            rides.extend(self._generate_rides_day_part(day_part, samples_num))
+
+        for sample in range(samples_num):
+            ride_idx = random.randrange(0, 4)
+            start_mean, end_mean = options[ride_idx]
+            start_x, start_y = np.random.multivariate_normal(start_mean, cov)
+            start_x = max(min(config.MAX_LATITUDE, start_x), config.MIN_LATITUDE)
+            start_y = max(min(config.MAX_LONGITUDE, start_y), config.MIN_LONGITUDE)
+            end_x, end_y = np.random.multivariate_normal(end_mean, cov)
+            end_x = max(min(config.MAX_LATITUDE, end_x), config.MIN_LATITUDE)
+            end_y = max(min(config.MAX_LONGITUDE, end_y), config.MIN_LONGITUDE)
+            ride = Ride(Point(start_x, start_y), Point(end_x, end_y), 8, 9)
+            rides.append(ride)
         return rides
+
+
+        # if not samples_num:
+        #     samples_num = int(self.io.get_user_numerical_choice(GET_CUSTOM_DATA_SAMPLES_NUMBER,
+        #                                                         TrafficGenerator.MIN_CUSTOM_DATA,
+        #                                                         TrafficGenerator.MAX_CUSTOM_DATA))
+        #
+        # rides: List[Ride] = []
+        # for day_part in [day_part.value for day_part in TrafficGenerator.DayPart]:
+        #     rides.extend(self._generate_rides_day_part(day_part, samples_num))
+        # return rides
 
     def _generate_rides_day_part(self, day_part: int, samples_num: int) -> List[Ride]:
         rides = []

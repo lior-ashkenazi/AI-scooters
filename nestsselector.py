@@ -173,7 +173,7 @@ class NestsSelector:
 
         agent: DynamicAgent = AgentsFactory.build_dynamic_agent(agent_chosen, agent_info)
 
-        agent.learn(num_games=args.num_games, game_len=args.game_len)
+        agent.learn(num_games=args.num_games, game_len=args.game_len, visualize=True)
 
         # agent_chosen = "genetic_algorithm"
         #

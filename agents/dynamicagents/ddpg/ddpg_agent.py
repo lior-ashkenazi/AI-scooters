@@ -181,6 +181,7 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
         # we assume that scooters_locations is an action and not a Map type
         # discretize the action-
         discrete_action = self.discretize(action.copy())
+        print(discrete_action)
         return [NestAllocation(self.agent_info.optional_nests[i], scooters_num)
                 for i, scooters_num in enumerate(discrete_action)]
 
@@ -210,6 +211,9 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
         result: Tuple[List[Ride], Map, Map] = self.agent_info. \
             traffic_simulator.get_simulation_result(prev_nests_locations)
         rides_completed: List[Ride] = result[0]
+        start_points = [ride.orig for ride in rides_completed]
+        plt.scatter([p.x for p in start_points], [p.y for p in start_points])
+        plt.show()
         next_day_locations: Map = result[1]
         potential_starts: Map = result[2]
         next_state: np.ndarray = self.get_state(next_day_locations, potential_starts)
@@ -253,7 +257,10 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
             score = 0
 
             for step_idx in range(game_len):
-                action: np.ndarray = self.get_action(state, evaluate)
+                # action: np.ndarray = self.get_action(state, evaluate)
+                bad_nest = max(0, 0 - i * 0.008)
+                other_nest = (1 - 4 * bad_nest) / 3
+                action = np.array([other_nest, other_nest, other_nest, bad_nest, bad_nest, bad_nest, bad_nest])
                 pre_nests_spread: List[NestAllocation]
                 next_day_scooters_locations: Map
                 next_state: np.ndarray
@@ -275,11 +282,11 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
                 state = next_state
                 scooters_locations = next_day_scooters_locations
 
-            # if visualize and (i == num_games - 1):
-            #     vis = Visualizer(rides_list=total_rides,
-            #                      nests_list=total_nest_allocations,
-            #                      revenue_list=total_rewards)
-            #     vis.visualise()
+            if visualize and (i == num_games - 1):
+                vis = Visualizer(rides_list=total_rides,
+                                 nests_list=total_nest_allocations,
+                                 revenue_list=total_rewards)
+                vis.visualise()
 
             score /= game_len
             score_history.append(score)
@@ -289,8 +296,8 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
             #     best_score = avg_score
             #     if not load_checkpoint:
             #         self.save_models()
-            print(np.max(action))
-            print(np.argmax(action))
+            print(action)
+            print(len(rides_completed))
             print('episode ', i, 'score %.5f' % score, 'avg score %.5f' % avg_score)
 
         f, axs = plt.subplots(4)
