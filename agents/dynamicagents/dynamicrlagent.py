@@ -76,13 +76,15 @@ class DynamicRLAgent(ReinforcementLearningAgent, DynamicAgent):
         #  of this method can move to another method or stay here and add to args a state
         if not args:
             # extremely inefficient, do not use often
-            possible_scooters_spread = [comb for comb in
-                                        it.combinations_with_replacement(
+            possible_scooters_spread = np.array([comb for comb in
+                                        it.product(
                                             range(self.agent_info.scooters_num + 1),
-                                            len(self.agent_info.optional_nests))
-                                        if sum(comb) == self.agent_info.scooters_num]
-            return np.array(random.choice(possible_scooters_spread))
+                                            repeat=len(self.agent_info.optional_nests))
+                                        if sum(comb) == self.agent_info.scooters_num])
+            return possible_scooters_spread[np.random.choice(len(possible_scooters_spread))]
 
+    # TODO we use this method in multiple agents, both dynamic and static. Maybe it should be
+    #  implemented in Agent class
     def get_nests_spread(self, action: np.ndarray) -> List[NestAllocation]:
         # we assume that scooters_locations is an action and not a Map type
         return [NestAllocation(self.agent_info.optional_nests[i], scooters_num)
