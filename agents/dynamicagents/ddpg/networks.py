@@ -12,7 +12,7 @@ class CriticNetwork(keras.Model):
         self.checkpoint_file = os.path.join(self.checkpoint_dir,
                     self.model_name+'_ddpg.h5')
 
-        # self.action_fc1 = Dense(30, activation='relu')
+        self.action_fc1 = Dense(30, activation='relu')
         # self.action_fc2 = Dense(20, activation='relu')
 
         self.state_conv1 = ConvLayer(filters=2)
@@ -21,7 +21,7 @@ class CriticNetwork(keras.Model):
         self.state_flat = Flatten()
 
         self.state_action_concat = Concatenate()
-        # self.both_fc1 = Dense(20, activation='relu')
+        self.both_fc1 = Dense(5, activation='relu')
         # self.both_fc2 = Dense(15, activation='relu')
         self.final = Dense(1, activation=None)
 
@@ -30,11 +30,11 @@ class CriticNetwork(keras.Model):
         # state_res = self.state_conv2(state_res)
         # state_res = self.state_conv3(state_res)
         state_res_flat = self.state_flat(state_res)
-        # action_res = self.action_fc1(action)
+        action_res = self.action_fc1(action)
         # action_res = self.action_fc2(action_res)
 
-        state_action_res = self.state_action_concat([state_res_flat, action])
-        # state_action_res = self.both_fc1(state_action_res)
+        state_action_res = self.state_action_concat([state_res_flat, action_res])
+        state_action_res = self.both_fc1(state_action_res)
         # state_action_res = self.both_fc2(state_action_res)
         value = self.final(state_action_res)
         return value

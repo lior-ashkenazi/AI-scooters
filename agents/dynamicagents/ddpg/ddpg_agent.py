@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import tensorflow as tf
 import tensorflow.keras as keras
 from tensorflow.keras.optimizers import Adam
@@ -19,9 +20,10 @@ from data.trafficdatatypes import Map, NestAllocation, Ride
 from data.trafficgenerator import TrafficGenerator
 from programio.visualizer import Visualizer
 
+
 class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
-    def __init__(self, env_agent_info, actor_lr=1e-4, critic_lr=2e-4,
-                 decay_factor=0.1, max_size=20000, target_update_rate=1e-3,
+    def __init__(self, env_agent_info, actor_lr=1e-4, critic_lr=1e-1,
+                 decay_factor=0.1, max_size=2000, target_update_rate=1e-3,
                  batch_size=64, noise=0.001):
         super(DdpgAgent, self).__init__(env_agent_info)
         self.decay_factor = decay_factor
@@ -91,7 +93,7 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
             #                            mean=0.0, stddev=self.noise)
         # note that if the env has an action > 1, we have to multiply by
         # max action at some point
-        action = tf.clip_by_value(action, self.min_action, self.max_action)[0]
+        action = np.clip(action, self.min_action, self.max_action)[0]
         if np.all(action == 0):
             action = np.full(action.shape, 1)
         action /= np.sum(action)
@@ -99,7 +101,7 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
 
     def learn_batch(self):
         if self.memory.mem_cntr < self.batch_size:
-            return
+            return 0, 0, [0], [0]
 
         state, action, reward, next_state = self.memory.sample_buffer(self.batch_size)
 
@@ -132,6 +134,9 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
             actor_network_gradient, self.actor.trainable_variables))
 
         self.update_network_parameters()
+        critic_value_lst = [v for v in critic_value.numpy()]
+        reward_lst = [v for v in rewards.numpy()]
+        return critic_loss, actor_loss, critic_value_lst, reward_lst
 
     def get_state(self, end_day_scooters_locations: Map, potential_starts: Map, normalize=True) -> np.ndarray:
         binx: np.ndarray
@@ -175,7 +180,7 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
     def get_nests_spread(self, action: np.ndarray) -> List[NestAllocation]:
         # we assume that scooters_locations is an action and not a Map type
         # discretize the action-
-        discrete_action = self.discretize(action)
+        discrete_action = self.discretize(action.copy())
         return [NestAllocation(self.agent_info.optional_nests[i], scooters_num)
                 for i, scooters_num in enumerate(discrete_action)]
 
@@ -234,6 +239,8 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
         else:
             evaluate = False
 
+        total_critic_loss, total_actor_loss, total_critic_values, total_learn_rewards = [], [], [], []
+
         for i in range(num_games):
             scooters_locations: Map
             state: np.ndarray
@@ -260,7 +267,11 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
                 score += reward
                 self.remember(state, action, reward, next_state)
                 if not evaluate:
-                    self.learn_batch()
+                    critic_loss, actor_loss, critic_values, reward_values = self.learn_batch()
+                    total_critic_loss.append(critic_loss)
+                    total_actor_loss.append(actor_loss)
+                    total_critic_values += critic_values
+                    total_learn_rewards += reward_values
                 state = next_state
                 scooters_locations = next_day_scooters_locations
 
@@ -278,10 +289,20 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
             #     best_score = avg_score
             #     if not load_checkpoint:
             #         self.save_models()
-            print(action)
             print(np.max(action))
             print(np.argmax(action))
             print('episode ', i, 'score %.5f' % score, 'avg score %.5f' % avg_score)
+
+        f, axs = plt.subplots(4)
+        axs[0].plot(range(len(total_actor_loss)), total_actor_loss)
+        axs[0].title.set_text('actor_loss')
+        axs[1].plot(range(len(total_critic_loss)), total_critic_loss)
+        axs[1].title.set_text('critic_loss')
+        axs[2].plot(range(len(total_critic_values)), total_critic_values)
+        axs[2].title.set_text('total_critic_values')
+        axs[3].plot(range(len(total_learn_rewards)), total_learn_rewards)
+        axs[3].title.set_text('total_rewards')
+        plt.show()
         return
 
 
