@@ -8,7 +8,7 @@ from data.trafficgenerator import TrafficGenerator
 from data.trafficdatatypes import *
 
 class CriticNetwork(keras.Model):
-    def __init__(self, name='critic', chkpt_dir=r"""C:\Users\roiko\Desktop\SemesterA\ai"""):
+    def __init__(self, name='critic', chkpt_dir=r"""C:\Users\yonathanb\Desktop\studies\year3\semester2\ai\exercises\practical\AI-scooters"""):
         super(CriticNetwork, self).__init__()
         self.model_name = name
         self.checkpoint_dir = chkpt_dir
@@ -45,7 +45,7 @@ class CriticNetwork(keras.Model):
 
 class ActorNetwork(keras.Model):
     def __init__(self,  n_actions, name='actor',
-                 chkpt_dir=r"""C:\Users\roiko\Desktop\SemesterA\ai"""):
+                 chkpt_dir=r"""C:\Users\yonathanb\Desktop\studies\year3\semester2\ai\exercises\practical\AI-scooters"""):
         super(ActorNetwork, self).__init__()
         self.model_name = name
         self.checkpoint_dir = chkpt_dir
