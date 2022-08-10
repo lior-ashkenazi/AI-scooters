@@ -8,7 +8,7 @@ from data.trafficgenerator import TrafficGenerator
 from data.trafficdatatypes import *
 
 class CriticNetwork(keras.Model):
-    def __init__(self, name='critic', chkpt_dir=r"""C:\Users\yonathanb\Desktop\studies\year3\semester2\ai\exercises\practical\AI-scooters"""):
+    def __init__(self, name='critic', chkpt_dir=r"""C:\Users\yonathanb\Desktop\studies\year3\semester2\ai\exercises\practical\AI-scooters\models\large_freeze"""):
         super(CriticNetwork, self).__init__()
         self.model_name = name
         self.checkpoint_dir = chkpt_dir
@@ -45,7 +45,7 @@ class CriticNetwork(keras.Model):
 
 class ActorNetwork(keras.Model):
     def __init__(self,  n_actions, name='actor',
-                 chkpt_dir=r"""C:\Users\yonathanb\Desktop\studies\year3\semester2\ai\exercises\practical\AI-scooters"""):
+                 chkpt_dir=r"""C:\Users\yonathanb\Desktop\studies\year3\semester2\ai\exercises\practical\AI-scooters\models\large_freeze"""):
         super(ActorNetwork, self).__init__()
         self.model_name = name
         self.checkpoint_dir = chkpt_dir
@@ -60,7 +60,7 @@ class ActorNetwork(keras.Model):
         # self.flat = Flatten()
         # self.before_final = Dense(2 * n_actions, activation='relu')
         self.flatten = Flatten()
-        self.d1 = Dense(4 * n_actions, activation='relu', kernel_regularizer='l1')
+        self.d1 = Dense(4 * n_actions, activation='relu')
         self.final = Dense(n_actions, activation='softmax')
 
     def call(self, state):

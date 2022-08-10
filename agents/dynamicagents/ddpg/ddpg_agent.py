@@ -21,8 +21,8 @@ from programio.visualizer import Visualizer
 
 
 class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
-    def __init__(self, env_agent_info, actor_lr=1e-3, critic_lr=1e-2,
-                 decay_factor=0, max_size=250, target_update_rate=1e-3,
+    def __init__(self, env_agent_info, actor_lr=2e-4, critic_lr=1e-2,
+                 decay_factor=0, max_size=2000, target_update_rate=1e-3,
                  batch_size=64, noise=0.001):
         super(DdpgAgent, self).__init__(env_agent_info)
         self.decay_factor = decay_factor
@@ -98,8 +98,8 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
         actor_input = tf.convert_to_tensor([state], dtype=tf.float32)
         action = self.actor(actor_input)
         action = action.numpy()
-        print(action, state[..., 1], state[..., 0])
-        print("dist:", np.abs(action - state[..., 1]).mean())
+        # print(action, state[..., 1], state[..., 0])
+        # print("dist:", np.abs(action - state[..., 1]).mean())
         if not evaluate:
             action += np.random.normal(scale=self.noise, size=self.n_actions)
             # action += tf.random.normal(shape=[self.n_actions],
@@ -140,6 +140,7 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
             with tf.GradientTape() as tape:
                 new_policy_actions = self.actor(states)
                 actor_loss = -self.critic(states, new_policy_actions)
+                # actor_loss = keras.losses.MSE(new_policy_actions, states[..., 1])
                 actor_loss = tf.math.reduce_mean(actor_loss)
 
             actor_network_gradient = tape.gradient(actor_loss,
@@ -280,8 +281,8 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
 
         total_critic_loss, total_actor_loss, total_critic_values, total_learn_rewards = [], [], [], []
         options_index = 0
-        #
-        # for i in range(100):
+        # #random part
+        # for i in range(1000):
         #     print(i)
         #     scooters_locations: Map
         #     state: np.ndarray
@@ -303,6 +304,7 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
         #         state = next_state
         #         scooters_locations = next_day_scooters_locations
         # self.save_models()
+        # return
 
         #real games
         for i in range(num_games):
