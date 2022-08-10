@@ -46,7 +46,6 @@ class BaselineAgent():
             total_rewards: List[float] = []
 
             score = 0
-
             for step_idx in range(game_len):
                 action: np.ndarray = self.get_action()
                 pre_nests_spread: List[NestAllocation]
@@ -55,7 +54,7 @@ class BaselineAgent():
                 reward: float
                 rides_completed: List[Ride]
                 pre_nests_spread, next_day_scooters_locations, reward, rides_completed, used_scooters = \
-                    self.perform_step(scooters_locations, action)
+                    self.perform_step(scooters_locations, action, step_idx % 2)
 
                 self.learn_avg(used_scooters)
 
@@ -86,14 +85,14 @@ class BaselineAgent():
             print('episode ', i, 'score %.5f' % score, 'avg score %.5f' % avg_score)
         return
 
-    def perform_step(self, prev_scooters_locations: Map, action: np.ndarray) -> (Map, np.ndarray, float, List[Ride]):
+    def perform_step(self, prev_scooters_locations: Map, action: np.ndarray, options_index) -> (Map, np.ndarray, float, List[Ride]):
         prev_nests_spread: List[NestAllocation] = self.get_nests_spread(action)
         prev_nests_locations: Map = self.agent_info.traffic_simulator. \
             get_scooters_location_from_nests_spread(prev_nests_spread)
 
         # get simulation results - rides completed and scooters final location:
         result: Tuple[List[Ride], Map, Map, List] = self.agent_info. \
-            traffic_simulator.get_simulation_result(prev_nests_locations)
+            traffic_simulator.get_simulation_result(prev_nests_locations, options_index)
         rides_completed: List[Ride] = result[0]
         next_day_locations: Map = result[1]
         potential_starts: Map = result[2]

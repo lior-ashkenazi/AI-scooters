@@ -17,7 +17,7 @@ class TrafficSimulator:
         else:
             self._potential_rides = None
 
-    def get_simulation_result(self, scooters_initial_locations: Map) -> \
+    def get_simulation_result(self, scooters_initial_locations: Map, options_index) -> \
             Tuple[List[Ride], Map]:
         """
         :param scooters_initial_locations: scooters' initial location
@@ -29,7 +29,7 @@ class TrafficSimulator:
         if self._const_rides:
             potential_rides: List[Ride] = self._potential_rides
         else:
-            potential_rides: List[Ride] = self._traffic_generator.get_custom_data(self._rides_per_day_part)
+            potential_rides: List[Ride] = self._traffic_generator.get_custom_data(self._rides_per_day_part, options_index)
         potential_rides.sort(key=lambda r: r.start_time)
         available_scooters: Map = scooters_initial_locations
         starting_scooters_lst = []

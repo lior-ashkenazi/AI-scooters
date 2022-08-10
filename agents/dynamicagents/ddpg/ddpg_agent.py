@@ -22,7 +22,7 @@ from programio.visualizer import Visualizer
 
 class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
     def __init__(self, env_agent_info, actor_lr=1e-4, critic_lr=1e-1,
-                 decay_factor=0.1, max_size=2000, target_update_rate=1e-3,
+                 decay_factor=0.1, max_size=250, target_update_rate=1e-3,
                  batch_size=64, noise=0.001):
         super(DdpgAgent, self).__init__(env_agent_info)
         self.decay_factor = decay_factor
@@ -31,6 +31,7 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
         self.n_actions = len(self.agent_info.optional_nests)
         input_shape = (self.n_actions, 2)
         self.memory = ReplayBuffer(max_size, input_shape, self.n_actions)
+        self.random_memory = ReplayBuffer(max_size, input_shape, self.n_actions)
         self.batch_size = batch_size
         self.min_action = 0
         self.max_action = 1
@@ -53,7 +54,7 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
         self.nest_bins = np.array([(n.x, n.y) for n in self.agent_info.optional_nests])
         self.avg_end = np.ones((self.n_actions,)) / self.n_actions
         self.avg_start = np.ones((self.n_actions,)) / self.n_actions
-        self.alpha = 0.25
+        self.alpha = 1
 
 
     def update_network_parameters(self, target_update_rate=None):
@@ -90,9 +91,12 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
         self.target_critic.load_weights(self.target_critic.checkpoint_file)
 
     def get_action(self, state, evaluate=False):
+        # return state[..., 1]
         actor_input = tf.convert_to_tensor([state], dtype=tf.float32)
         action = self.actor(actor_input)
         action = action.numpy()
+        print(action, state[..., 1])
+        print("dist:", np.abs(action - state[..., 1]).mean())
         if not evaluate:
             action += np.random.normal(scale=self.noise, size=self.n_actions)
             # action += tf.random.normal(shape=[self.n_actions],
@@ -153,6 +157,7 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
         end_dist = np.sum(110 * (endpoints[None, ...] - self.nest_bins[:, None, :]) **2, axis=-1)
         end_dist_counts = np.bincount(end_dist.argmin(axis=0), minlength=self.n_actions)
         end_dist_counts = end_dist_counts / end_dist_counts.sum()
+
         self.avg_end = (1 - self.alpha) * self.avg_end + self.alpha * end_dist_counts
         cur_end_means = end_dist.mean(axis=1)
 
@@ -196,7 +201,7 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
 
     def get_start_state(self, normalize=True) -> (Map, np.ndarray):
         end_day_scooters_locations: Map = TrafficGenerator.get_random_end_day_scooters_locations(self.agent_info.scooters_num)
-        return end_day_scooters_locations, np.zeros((self.n_actions, 2))
+        return end_day_scooters_locations, np.ones((self.n_actions, 2)) / self.n_actions
         end_day_state = self.get_half_state(end_day_scooters_locations)
         potential_start = np.ones_like(end_day_state)
         potential_start /= np.sum(potential_start)
@@ -229,14 +234,14 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
         data_discrete = data_discrete.astype(int)
         return data_discrete
 
-    def perform_step(self, prev_scooters_locations: Map, action: np.ndarray) -> (Map, np.ndarray, float, List[Ride]):
+    def perform_step(self, prev_scooters_locations: Map, action: np.ndarray, options_index) -> (Map, np.ndarray, float, List[Ride]):
         prev_nests_spread: List[NestAllocation] = self.get_nests_spread(action)
         prev_nests_locations: Map = self.agent_info.traffic_simulator. \
             get_scooters_location_from_nests_spread(prev_nests_spread)
 
         # get simulation results - rides completed and scooters final location:
         result: Tuple[List[Ride], Map, Map] = self.agent_info. \
-            traffic_simulator.get_simulation_result(prev_nests_locations)
+            traffic_simulator.get_simulation_result(prev_nests_locations, options_index)
         rides_completed: List[Ride] = result[0]
         start_points = [ride.orig for ride in rides_completed]
         # plt.scatter([p.x for p in start_points], [p.y for p in start_points])
@@ -271,6 +276,7 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
             evaluate = False
 
         total_critic_loss, total_actor_loss, total_critic_values, total_learn_rewards = [], [], [], []
+        options_index = 0
 
         for i in range(num_games):
             scooters_locations: Map
@@ -294,7 +300,8 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
                 reward: float
                 rides_completed: List[Ride]
                 pre_nests_spread, next_day_scooters_locations, next_state, reward, rides_completed = \
-                    self.perform_step(scooters_locations, action)
+                    self.perform_step(scooters_locations, action, options_index)
+                options_index = (options_index + 1) % 2
                 total_rides.append(rides_completed)
                 total_rewards.append(reward)
                 total_nest_allocations.append(pre_nests_spread)
