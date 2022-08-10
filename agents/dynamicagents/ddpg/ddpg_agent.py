@@ -21,7 +21,7 @@ from programio.visualizer import Visualizer
 
 
 class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
-    def __init__(self, env_agent_info, actor_lr=2e-4, critic_lr=1e-2,
+    def __init__(self, env_agent_info, actor_lr=2e-4, critic_lr=1e-3,
                  decay_factor=0, max_size=2000, target_update_rate=1e-3,
                  batch_size=64, noise=0.001):
         super(DdpgAgent, self).__init__(env_agent_info)
@@ -112,7 +112,7 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
         action /= np.sum(action)
         return action
 
-    def learn_batch(self, memory, grad_actor):
+    def learn_batch(self, memory, grad_actor, grad_critic):
         if memory.mem_cntr < self.batch_size:
             return 0, 0, [0], [0]
 
@@ -122,20 +122,22 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
         next_states = tf.convert_to_tensor(next_state, dtype=tf.float32)
         rewards = tf.convert_to_tensor(reward, dtype=tf.float32)
         actions = tf.convert_to_tensor(action, dtype=tf.float32)
-        actor_loss, critic_loss, critic_value = 0, 0, 0
-        if not grad_actor:
+        actor_loss, critic_loss, critic_value_lst = 0, 0, [0]
+        if grad_critic:
             with tf.GradientTape() as tape:
                 target_actions = self.target_actor(next_states)
                 critic_value_next = tf.squeeze(self.target_critic(
                                     next_states, target_actions), 1)
                 critic_value = tf.squeeze(self.critic(states, actions), 1)
-                target = rewards + self.decay_factor * critic_value_next
+                # target = rewards + self.decay_factor * critic_value_next
+                target = rewards
                 critic_loss = keras.losses.MSE(target, critic_value)
 
             critic_network_gradient = tape.gradient(critic_loss,
                                                     self.critic.trainable_variables)
             self.critic.optimizer.apply_gradients(zip(
                 critic_network_gradient, self.critic.trainable_variables))
+            critic_value_lst = [v for v in critic_value.numpy()]
         if grad_actor:
             with tf.GradientTape() as tape:
                 new_policy_actions = self.actor(states)
@@ -148,9 +150,8 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
             self.actor.optimizer.apply_gradients(zip(
                 actor_network_gradient, self.actor.trainable_variables))
             # self.update_network_parameters()
-        # critic_value_lst = [v for v in critic_value.numpy()]
         reward_lst = [v for v in rewards.numpy()]
-        return critic_loss, actor_loss, [0], reward_lst
+        return critic_loss, actor_loss, critic_value_lst, reward_lst
 
     def get_state(self, end_day_scooters_locations: Map, potential_starts: Map, normalize=True) -> np.ndarray:
         binx: np.ndarray
@@ -300,7 +301,8 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
         #         options_index = (options_index + 1) % 2
         #         self.remember(self.random_memory, state, action, reward, next_state)
         #         if not evaluate:
-        #             critic_loss, actor_loss, critic_values, reward_values = self.learn_batch(self.random_memory, False)
+        #             critic_loss, actor_loss, critic_values, reward_values = \
+        #             self.learn_batch(self.random_memory, grad_actor=False, grad_critic=True)
         #         state = next_state
         #         scooters_locations = next_day_scooters_locations
         # self.save_models()
@@ -337,7 +339,8 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
                 score += reward
                 self.remember(self.memory, state, action, reward, next_state)
                 if not evaluate:
-                    critic_loss, actor_loss, critic_values, reward_values = self.learn_batch(self.memory, True)
+                    critic_loss, actor_loss, critic_values, reward_values = \
+                        self.learn_batch(self.memory, grad_actor=True, grad_critic=True)
                     total_critic_loss.append(critic_loss)
                     total_actor_loss.append(actor_loss)
                     total_critic_values += critic_values
