@@ -22,7 +22,7 @@ from programio.visualizer import Visualizer
 
 class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
     def __init__(self, env_agent_info, actor_lr=2e-4, critic_lr=1e-3,
-                 decay_factor=0, max_size=2000, target_update_rate=1e-3,
+                 decay_factor=0.3, max_size=2000, target_update_rate=1e-3,
                  batch_size=64, noise=0.001):
         super(DdpgAgent, self).__init__(env_agent_info)
         self.decay_factor = decay_factor
@@ -58,7 +58,6 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
         self.avg_start = np.ones((self.n_actions,)) / self.n_actions
         self.alpha = 1
 
-
     def update_network_parameters(self, target_update_rate=None):
         if target_update_rate is None:
             target_update_rate = self.target_update_rate
@@ -90,8 +89,9 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
         # self.actor.load_weights(self.actor.checkpoint_file)
         # self.target_actor.load_weights(self.target_actor.checkpoint_file)
         self.critic(np.zeros((1, 2, 2)), np.zeros((1, 2)))
+        self.target_critic(np.zeros((1, 2, 2)), np.zeros((1, 2)))
         self.critic.load_weights(self.critic.checkpoint_file)
-        # self.target_critic.load_weights(self.target_critic.checkpoint_file)
+        self.target_critic.load_weights(self.critic.checkpoint_file)  # todo: change back to target loading!
 
     def get_action(self, state, evaluate=False):
         # return state[..., 1]
@@ -129,8 +129,8 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
                 critic_value_next = tf.squeeze(self.target_critic(
                                     next_states, target_actions), 1)
                 critic_value = tf.squeeze(self.critic(states, actions), 1)
-                # target = rewards + self.decay_factor * critic_value_next
-                target = rewards
+                target = rewards + self.decay_factor * critic_value_next
+                # target = rewards
                 critic_loss = keras.losses.MSE(target, critic_value)
 
             critic_network_gradient = tape.gradient(critic_loss,
@@ -149,7 +149,7 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
                                                    self.actor.trainable_variables)
             self.actor.optimizer.apply_gradients(zip(
                 actor_network_gradient, self.actor.trainable_variables))
-            # self.update_network_parameters()
+            self.update_network_parameters()
         reward_lst = [v for v in rewards.numpy()]
         return critic_loss, actor_loss, critic_value_lst, reward_lst
 
