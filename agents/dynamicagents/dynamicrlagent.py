@@ -58,8 +58,8 @@ class DynamicRLAgent(ReinforcementLearningAgent, DynamicAgent):
             states.append(state)
             actions.append(action)
             print(f'finished {i}th iteration')
-        plt.scatter(range(10), total_revenue)
-        plt.show()
+        # plt.scatter(range(10), total_revenue)
+        # plt.show()
 
     def get_state(self, end_day_scooters_locations: Map) -> np.ndarray:
         binx: np.ndarray

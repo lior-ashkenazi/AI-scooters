@@ -30,6 +30,8 @@ class Point:
 
     def to_numpy(self) -> np.ndarray:
         return np.array([self.x, self.y])
+    def __eq__(self, other):
+        return self.x == other.x and self.y == other.y
 
 
 def point_dist_np(a: np.ndarray, b: np.ndarray) -> float:

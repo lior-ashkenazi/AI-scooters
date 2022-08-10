@@ -35,6 +35,7 @@ class TrafficSimulator:
         starting_scooters_lst = []
         unavailable_scooters: PriorityQueue = PriorityQueue()
         rides_performed: List[Ride] = []
+        used_scooters = []
 
         for ride in potential_rides:
             # return scooters that finish ride to available scooters
@@ -44,23 +45,25 @@ class TrafficSimulator:
 
             # if ride can be performed, update data structures accordingly
             starting_scooters_lst.append(ride.orig.to_numpy())
-            if self.ride_is_feasible(ride, available_scooters):
+            is_feasible, nearest_scooter = self.ride_is_feasible(ride, available_scooters)
+            if is_feasible:
                 unavailable_scooters.put(ride)
                 rides_performed.append(ride)
+                used_scooters.append(nearest_scooter)
 
         # at the end of the simulation, get all the scooters back to the map
         while unavailable_scooters.qsize() > 0:
             ride_done: Ride = unavailable_scooters.get()
             available_scooters.add_point(ride_done.dest)
         starting_scooters = Map(np.array(starting_scooters_lst))
-        return rides_performed, available_scooters, starting_scooters
+        return rides_performed, available_scooters, starting_scooters, used_scooters
 
     def ride_is_feasible(self, ride: Ride, available_scooters: Map) -> bool:
         nearest_point: Optional[Point] = available_scooters.\
             pop_nearest_point_in_radius(ride.orig, self._search_radius)
         if nearest_point is None:
-            return False
-        return True
+            return False, None
+        return True, nearest_point
 
     @staticmethod
     def finish_rides(available_scooters: Map, unavailable_scooters: PriorityQueue,

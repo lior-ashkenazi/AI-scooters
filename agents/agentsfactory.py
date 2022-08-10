@@ -1,6 +1,8 @@
 from agents.agent import AgentInfo
 from agents.dynamicagent import DynamicAgent
 from agents.staticagent import StaticAgent
+from agents.dynamicagents.cheap_agent import CheapAgent
+from agents.dynamicagents.baseline_agent import BaselineAgent
 from agents.dynamicagents.ddpg.ddpg_agent import DdpgAgent
 from agents.dynamicagents.humanagent import HumanAgent
 from agents.dynamicagents.MinExpensesAgent import MinExpensesAgent
@@ -19,6 +21,8 @@ class AgentsFactory:
     AGENT_STATIC_BRUTEFORCE = "brute_force"
     AGENT_STATIC_GENETIC_ALGORITHM = "genetic_algorithm"
     AGENT_STATIC_SIMULATED_ANNEALING = "simulated_annealing"
+    BASELINE_AGENT = "baseline_agent"
+    CHEAP_AGENT = "cheap_agent"
 
     @staticmethod
     def build_dynamic_agent(choice: str, agent_info: AgentInfo) -> DynamicAgent:
@@ -28,6 +32,10 @@ class AgentsFactory:
             return HumanAgent(agent_info)
         if choice == AgentsFactory.AGENT_DYNAMIC_MIN_EXPENSES:
             return MinExpensesAgent(agent_info)
+        if choice == AgentsFactory.BASELINE_AGENT:
+            return BaselineAgent(agent_info)
+        if choice == AgentsFactory.CHEAP_AGENT:
+            return CheapAgent(agent_info)
         raise ValueError("no such agent")
 
     @staticmethod
