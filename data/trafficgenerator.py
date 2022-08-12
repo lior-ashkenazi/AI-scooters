@@ -96,32 +96,16 @@ class TrafficGenerator:
             - number of samples (that fits to the origin, destination, and start time)
         :return: all the samples created (list of rides)
         """
-        option_idx = option_idx % 3
+        # option_idx = option_idx % 3
         a1 = [32.0753, 34.7718]
         a2 = [32.0753, 34.7918]
         b1 = [32.0953, 34.7718]
-        b2 = [32.0953, 34.7918]
-        c1 = [32.0853, 34.7718]
-        c2 = [32.0853, 34.7918]
-
-        if option_idx == 0:
-            locations = [[a1, b1], [a2, b2], [a1, b2], [a2, b1]]
-            prob = [0.45, 0.45, 0.05, 0.05]
-        elif option_idx == 1:
-            locations = [[b1, c1], [b2, c2], [b1, a1], [b2, a2]]
-            prob = [0.45, 0.45, 0.05, 0.05]
-        elif option_idx == 2:
-            locations = [[c1, a1], [c2, a2]]
-            prob = [0.5, 0.5]
-        else:
-            assert False
 
         cov = np.array([[4.86247399e-06, 2.47087578e-06],
                         [2.47087578e-06, 3.38832923e-06]]) / 1000000
         rides: List[Ride] = []
-        start_end_index_lst = np.random.choice(len(locations), samples_num, p=prob)
-        for start_end_index in start_end_index_lst:
-            (start_mean, end_mean) = locations[start_end_index]
+        start_end_lst = [(a1, a2)] * int(samples_num/2) + [(a2, a1)] * int(samples_num/2)
+        for (start_mean, end_mean) in start_end_lst:
             start_x, start_y = np.random.multivariate_normal(start_mean, cov)
             start_x = max(min(config.MAX_LATITUDE, start_x), config.MIN_LATITUDE)
             start_y = max(min(config.MAX_LONGITUDE, start_y), config.MIN_LONGITUDE)

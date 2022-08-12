@@ -173,7 +173,8 @@ class NestsSelector:
         agent_chosen = args.agent_chosen
         if agent_chosen in ['dynamic_RL', 'baseline_agent']:
             agent: DynamicAgent = AgentsFactory.build_dynamic_agent(agent_chosen, agent_info)
-            agent.learn(num_games=args.num_games, game_len=args.game_len, visualize=True)
+            agent.learn(num_games=args.num_games, game_len=args.game_len, visualize=True,
+                        pretrain_critic=args.pretrain_critic, load_checkpoint=args.load_critic)
         elif agent_chosen == 'genetic_algorithm':
             agent: StaticAgent = AgentsFactory.build_static_agent(agent_chosen, agent_info)
             agent.spread_scooters()
@@ -225,6 +226,8 @@ if __name__ == '__main__':
                         choices=NestsSelector.DEFAULT_DATA + NestsSelector.CUSTOM_DATA)
     parser.add_argument("--const_rides", action="store_true",
                         help="if true, it will use the same potential rides for each day")
+    parser.add_argument("--pretrain_critic", action="store_true")
+    parser.add_argument("--load_critic", action="store_true")
     parser.add_argument("--num_games", action="store", type=int,
                         help="number of games, each one starts with a random location")
     parser.add_argument("--game_len", action="store", type=int,

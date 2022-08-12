@@ -1,5 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="nestsselector" type="PythonConfigurationType" factoryName="Python" singleton="false" nameIsGenerated="true">
+    <module name="AI-scooters" />
     <option name="INTERPRETER_OPTIONS" value="" />
     <option name="PARENT_ENVS" value="true" />
     <envs>
@@ -10,9 +11,8 @@
     <option name="IS_MODULE_SDK" value="false" />
     <option name="ADD_CONTENT_ROOTS" value="true" />
     <option name="ADD_SOURCE_ROOTS" value="true" />
-    <module name="" />
     <option name="SCRIPT_NAME" value="$PROJECT_DIR$/nestsselector.py" />
-    <option name="PARAMETERS" value="--num_games 50 --game_len 50 --agent_chosen dynamic_RL" />
+    <option name="PARAMETERS" value="--num_games 30 --game_len 50 --agent_chosen dynamic_RL --load_critic" />
     <option name="SHOW_COMMAND_LINE" value="false" />
     <option name="EMULATE_TERMINAL" value="false" />
     <option name="MODULE_MODE" value="false" />

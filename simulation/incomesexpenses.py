@@ -42,6 +42,6 @@ class IncomesExpenses:
         :param scooters_in_nests_locations:
         :return:
         """
-        return self.incomes_factor * self.calc_incomes(all_rides) - self.\
-            expenses_factor * self.calc_expenses(scooters_locations,
-                                                 scooters_in_nests_locations)
+        incomes = self.incomes_factor * self.calc_incomes(all_rides)
+        expenses = self.expenses_factor * self.calc_expenses(scooters_locations, scooters_in_nests_locations)
+        return incomes, expenses
