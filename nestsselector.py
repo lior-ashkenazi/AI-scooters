@@ -155,6 +155,7 @@ class NestsSelector:
                                                                const_rides=args.const_rides)
         incomes_factor: float = consts['incomes_factor']
         expenses_factor: float = consts['expenses_factor']
+        unused_scooters_factor = consts['unused_scooters_factor']
         incomes_expenses: IncomesExpenses = IncomesExpenses(incomes_factor,
                                                             expenses_factor)
         features_data: FeaturesData = self.features_data_generator. \
@@ -172,7 +173,8 @@ class NestsSelector:
         # agent_chosen = consts['agent_chosen']
         agent_chosen = args.agent_chosen
         if agent_chosen in ['dynamic_RL', 'baseline_agent']:
-            agent: DynamicAgent = AgentsFactory.build_dynamic_agent(agent_chosen, agent_info, model_dir=args.model_dir)
+            agent: DynamicAgent = AgentsFactory.build_dynamic_agent(agent_chosen, agent_info, model_dir=args.model_dir,
+                                                                    unused_scooters_factor=unused_scooters_factor)
             agent.learn(num_games=args.num_games, game_len=args.game_len, visualize=True,
                         pretrain_critic=args.pretrain_critic, load_checkpoint=args.load_critic)
         elif agent_chosen == 'genetic_algorithm':

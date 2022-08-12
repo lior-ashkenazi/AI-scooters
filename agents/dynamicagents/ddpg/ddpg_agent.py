@@ -22,11 +22,12 @@ import os
 
 
 class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
-    def __init__(self, env_agent_info, model_dir, actor_lr=2e-4, critic_lr=5e-3,
-                 decay_factor=0, max_size=250, target_update_rate=1e-3,
-                 batch_size=64, noise=0.001):
+    def __init__(self, env_agent_info, model_dir, unused_scooters_factor, actor_lr=2e-4, critic_lr=5e-3,
+                 decay_factor=0.6, max_size=250, target_update_rate=1e-3,
+                 batch_size=64, noise=0.007):
         super(DdpgAgent, self).__init__(env_agent_info)
         self.model_dir = os.path.join(r'C:\Users\yonathanb\Desktop\studies\year3\semester2\ai\exercises\practical\AI-scooters\models', model_dir)
+        self.unused_scooters_factor = unused_scooters_factor
         self.decay_factor = decay_factor
         self.target_update_rate = target_update_rate
         # input_shape = (self.agent_info.grid_len, self.agent_info.grid_len, 2)
@@ -39,12 +40,15 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
         self.max_action = 1
         self.noise = noise
         # self.actor = ActorNetwork(env_agent_info, name='actor')
-        self.actor = ActorNetwork(self.n_actions, name='actor')
+        self.actor = ActorNetwork(self.n_actions, name='actor', scooters_num=self.agent_info.scooters_num,
+                                  rides_num=self.agent_info.traffic_simulator._rides_per_day_part)
         self.critic = CriticNetwork(name='critic', chkpt_dir=self.model_dir)
         # self.target_actor = ActorNetwork(env_agent_info,
         #                                  name='target_actor')
         self.target_actor = ActorNetwork(self.n_actions,
-                                         name='target_actor', chkpt_dir=self.model_dir)
+                                         name='target_actor', chkpt_dir=self.model_dir,
+                                         scooters_num=self.agent_info.scooters_num,
+                                         rides_num=self.agent_info.traffic_simulator._rides_per_day_part)
         self.target_critic = CriticNetwork(name='target_critic')
 
         self.actor.compile(optimizer=Adam(learning_rate=actor_lr))
@@ -91,8 +95,8 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
         print('... loading models ...')
         # self.actor.load_weights(self.actor.checkpoint_file)
         # self.target_actor.load_weights(self.target_actor.checkpoint_file)
-        self.critic(np.zeros((1, self.n_actions, 2)), np.zeros((1, self.n_actions)))
-        self.target_critic(np.zeros((1, self.n_actions, 2)), np.zeros((1, self.n_actions)))
+        self.critic(np.zeros((1, self.n_actions, 2)), np.zeros((1, self.n_actions)), np.zeros((1, 1)), np.zeros((1, 1)))
+        self.target_critic(np.zeros((1, self.n_actions, 2)), np.zeros((1, self.n_actions)), np.zeros((1, 1)), np.zeros((1, 1)))
         self.critic.load_weights(self.critic.checkpoint_file)
         self.target_critic.load_weights(self.critic.checkpoint_file)  # todo: change back to target loading!
 
@@ -130,11 +134,12 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
         if grad_critic:
             with tf.GradientTape() as tape:
                 target_actions = self.target_actor(next_states)
-                # critic_value_next = tf.squeeze(self.target_critic(
-                #                     next_states, target_actions), 1)
-                critic_value = tf.squeeze(self.critic(states, actions, extra_features), 1)
-                # target = rewards + self.decay_factor * critic_value_next
-                target = rewards
+                next_optimal_transport_approx, next_unused_scooters_percent = self.actor.extract_extra_features(states, target_actions)
+                critic_value_next = tf.squeeze(self.target_critic(next_states, target_actions, next_optimal_transport_approx, next_unused_scooters_percent), 1)
+                optimal_transport_approx, unused_scooters_percent = self.actor.extract_extra_features(states, actions)
+                critic_value = tf.squeeze(self.critic(states, actions, optimal_transport_approx, unused_scooters_percent), 1)
+                target = rewards + self.decay_factor * critic_value_next
+                # target = rewards
                 critic_loss = keras.losses.MSE(target, critic_value)
 
             critic_network_gradient = tape.gradient(critic_loss,
@@ -145,7 +150,8 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
         if grad_actor:
             with tf.GradientTape() as tape:
                 new_policy_actions = self.actor(states)
-                actor_loss = -self.critic(states, new_policy_actions)
+                optimal_transport_approx, unused_scooters_percent = self.actor.extract_extra_features(states, new_policy_actions)
+                actor_loss = -self.critic(states, new_policy_actions, optimal_transport_approx, unused_scooters_percent)
                 # actor_loss = keras.losses.MSE(new_policy_actions, states[..., 1])
                 actor_loss = tf.math.reduce_mean(actor_loss)
 
@@ -261,6 +267,7 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
         result: Tuple[List[Ride], Map, Map] = self.agent_info. \
             traffic_simulator.get_simulation_result(tmp_prev_nests_locations, options_index)
         rides_completed: List[Ride] = result[0]
+
         start_points = [ride.orig for ride in rides_completed]
         # plt.scatter([p.x for p in start_points], [p.y for p in start_points])
         # plt.show()
@@ -273,10 +280,12 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
             get_scooters_location_from_nests_spread(prev_nests_spread)
         incomes, expenses = self.agent_info.incomes_expenses.calculate_revenue(rides_completed, prev_scooters_locations,
                                                                                prev_nests_locations)
-        reward = incomes - expenses
+        money = incomes - expenses
+        unused_scooters_amount = self.agent_info.scooters_num - len(rides_completed)
+        reward = money - unused_scooters_amount * self.unused_scooters_factor
         # print(f'action {action}')
         # print(f'incomes {incomes}, expenses -{expenses}')
-        return prev_nests_spread, next_day_locations, next_state, reward, rides_completed
+        return prev_nests_spread, next_day_locations, next_state, reward, money, rides_completed
 
     def get_random_nest_spread(self):
         possible_scooters_spread = [comb for comb in
@@ -288,7 +297,7 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
 
     def learn(self, num_games, game_len, visualize, load_checkpoint, pretrain_critic):
         best_score = float('-inf')
-        score_history = []
+        score_history, score_money_history = [], []
 
         if load_checkpoint:
             evaluate = False
@@ -318,11 +327,12 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
                     next_state: np.ndarray
                     reward: float
                     rides_completed: List[Ride]
-                    pre_nests_spread, next_day_scooters_locations, next_state, reward, rides_completed = \
+                    pre_nests_spread, next_day_scooters_locations, next_state, reward, money, rides_completed = \
                         self.perform_step(scooters_locations, action, options_index)
                     options_index = (options_index + 1)
                     extra_features = self.extract_extra_features(state, action)
-                    self.remember(self.random_memory, state, extra_features, action, reward, next_state)
+                    if step_idx != 0:
+                        self.remember(self.random_memory, state, extra_features, action, reward, next_state)
                     if not evaluate:
                         critic_loss, actor_loss, critic_values, reward_values = \
                         self.learn_batch(self.random_memory, grad_actor=False, grad_critic=True)
@@ -333,9 +343,9 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
                     scooters_locations = next_day_scooters_locations
                 random_critic_loss += random_cur_game_critic_loss
                 print(i, f'critic loss {np.average(np.array(random_cur_game_critic_loss))}')
-                # if i % 100 == 0:
-            #         self.save_models()
-            # self.save_models()
+                if i % 100 == 0:
+                    self.save_models()
+            self.save_models()
             self.plot_results(total_critic_loss=random_critic_loss, total_critic_values=random_critic_values,
                                total_learn_rewards=random_rewards, total_actor_loss=total_actor_loss)
             return
@@ -350,28 +360,30 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
             total_nest_allocations: List[List[NestAllocation]] = []
             total_rewards: List[float] = []
 
-            score = 0
+            score, score_money = 0, 0
 
             for step_idx in range(game_len):
-                # action: np.ndarray = self.get_action(state, evaluate)
-                action = np.array([0.5, 0.5, 0, 0])
+                action: np.ndarray = self.get_action(state, evaluate)
+                # action = np.array([1/2, 1/2, 0, 0])
                 pre_nests_spread: List[NestAllocation]
                 next_day_scooters_locations: Map
                 next_state: np.ndarray
                 reward: float
                 rides_completed: List[Ride]
-                pre_nests_spread, next_day_scooters_locations, next_state, reward, rides_completed = \
+                pre_nests_spread, next_day_scooters_locations, next_state, reward, money, rides_completed = \
                     self.perform_step(scooters_locations, action, options_index)
                 options_index = (options_index + 1)
                 total_rides.append(rides_completed)
                 total_rewards.append(reward)
                 total_nest_allocations.append(pre_nests_spread)
                 score += reward
+                score_money += money
                 extra_features = self.extract_extra_features(state, action)
-                self.remember(self.memory, extra_features, state, action, reward, next_state)
+                if step_idx != 0:
+                    self.remember(self.memory, state, extra_features, action, reward, next_state)
                 if not evaluate:
                     critic_loss, actor_loss, critic_values, reward_values = \
-                        self.learn_batch(self.memory, grad_actor=True, grad_critic=False)
+                        self.learn_batch(self.memory, grad_actor=True, grad_critic=True)
                     total_critic_loss.append(critic_loss)
                     total_actor_loss.append(actor_loss)
                     total_critic_values += critic_values
@@ -386,8 +398,11 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
             #     vis.visualise()
 
             score /= game_len
+            score_money /= game_len
             score_history.append(score)
+            score_money_history.append(score_money)
             avg_score = np.mean(score_history[-7:])
+            avg_score_money = np.mean(score_money_history[-7:])
 
             # if avg_score > best_score:
             #     best_score = avg_score
@@ -395,7 +410,7 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
             #         self.save_models()
             print(action)
             # print(len(rides_completed))
-            print('episode ', i, 'score %.5f' % score, 'avg score %.5f' % avg_score)
+            print('episode ', i, 'score %.5f' % score, 'avg score %.5f' % avg_score, 'money %.5f' % score_money, 'avg money %.5f' % avg_score_money)
 
         self.plot_results(total_critic_loss=total_critic_loss, total_critic_values=total_critic_values,
                           total_learn_rewards=total_learn_rewards, total_actor_loss=total_actor_loss)

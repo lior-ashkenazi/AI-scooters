@@ -1,7 +1,8 @@
 {
   "samples_num": 100,
-  "incomes_factor": 2,
-  "expenses_factor": 1,
+  "incomes_factor": 1,
+  "expenses_factor": 3,
+  "unused_scooters_factor": 5,
   "learning_time": 10,
   "optional_nests": [
             [32.0753, 34.7718],
