@@ -25,9 +25,9 @@ class AgentsFactory:
     CHEAP_AGENT = "cheap_agent"
 
     @staticmethod
-    def build_dynamic_agent(choice: str, agent_info: AgentInfo) -> DynamicAgent:
+    def build_dynamic_agent(choice: str, agent_info: AgentInfo, model_dir=None) -> DynamicAgent:
         if choice == AgentsFactory.AGENT_DYNAMIC_RL:
-            return DdpgAgent(agent_info)
+            return DdpgAgent(agent_info, model_dir=model_dir)
         elif choice == AgentsFactory.AGENT_DYNAMIC_HUMAN:
             return HumanAgent(agent_info)
         if choice == AgentsFactory.AGENT_DYNAMIC_MIN_EXPENSES:

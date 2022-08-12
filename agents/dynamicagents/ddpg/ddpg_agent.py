@@ -18,13 +18,15 @@ from agents.rlagent import ReinforcementLearningAgent
 from data.trafficdatatypes import Map, NestAllocation, Ride
 from data.trafficgenerator import TrafficGenerator
 from programio.visualizer import Visualizer
+import os
 
 
 class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
-    def __init__(self, env_agent_info, actor_lr=2e-4, critic_lr=5e-3,
+    def __init__(self, env_agent_info, model_dir, actor_lr=2e-4, critic_lr=5e-3,
                  decay_factor=0, max_size=250, target_update_rate=1e-3,
                  batch_size=64, noise=0.001):
         super(DdpgAgent, self).__init__(env_agent_info)
+        self.model_dir = os.path.join(r'C:\Users\yonathanb\Desktop\studies\year3\semester2\ai\exercises\practical\AI-scooters\models', model_dir)
         self.decay_factor = decay_factor
         self.target_update_rate = target_update_rate
         # input_shape = (self.agent_info.grid_len, self.agent_info.grid_len, 2)
@@ -38,11 +40,11 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
         self.noise = noise
         # self.actor = ActorNetwork(env_agent_info, name='actor')
         self.actor = ActorNetwork(self.n_actions, name='actor')
-        self.critic = CriticNetwork(name='critic')
+        self.critic = CriticNetwork(name='critic', chkpt_dir=self.model_dir)
         # self.target_actor = ActorNetwork(env_agent_info,
         #                                  name='target_actor')
         self.target_actor = ActorNetwork(self.n_actions,
-                                         name='target_actor')
+                                         name='target_actor', chkpt_dir=self.model_dir)
         self.target_critic = CriticNetwork(name='target_critic')
 
         self.actor.compile(optimizer=Adam(learning_rate=actor_lr))

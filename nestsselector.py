@@ -172,7 +172,7 @@ class NestsSelector:
         # agent_chosen = consts['agent_chosen']
         agent_chosen = args.agent_chosen
         if agent_chosen in ['dynamic_RL', 'baseline_agent']:
-            agent: DynamicAgent = AgentsFactory.build_dynamic_agent(agent_chosen, agent_info)
+            agent: DynamicAgent = AgentsFactory.build_dynamic_agent(agent_chosen, agent_info, model_dir=args.model_dir)
             agent.learn(num_games=args.num_games, game_len=args.game_len, visualize=True,
                         pretrain_critic=args.pretrain_critic, load_checkpoint=args.load_critic)
         elif agent_chosen == 'genetic_algorithm':
@@ -233,6 +233,7 @@ if __name__ == '__main__':
     parser.add_argument("--game_len", action="store", type=int,
                         help="number of days in a game")
     parser.add_argument("--agent_chosen", action="store", type=str)
+    parser.add_argument("--model_dir", action="store", type=str)
     args = parser.parse_args()
     # TODO to be deleted in the future
     # if len(sys.argv) == 1:
@@ -242,3 +243,4 @@ if __name__ == '__main__':
     #     io = GraphicIO() if args.io in NestsSelector.GRAPHIC_IO else ConsoleIO()
     #     ns = NestsSelector(io)
     #     ns.run()
+
