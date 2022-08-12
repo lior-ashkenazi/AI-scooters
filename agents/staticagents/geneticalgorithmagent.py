@@ -31,7 +31,9 @@ class GeneticAlgorithmAgent(StaticAgent):
         while self._pop.shape[0] > 1:
             fitness_vals: List[float] = []
             for ind in self._pop:
+                print(ind)
                 fitness_vals.append(self._simulate_individual(ind))
+            print(f'avg fitness {np.average(fitness_vals)}')
             parents: np.ndarray = self._fit(fitness_vals)
             offspring: np.ndarray = self._crossover(parents)
             self._pop = self._mutate(offspring)

@@ -169,11 +169,14 @@ class NestsSelector:
         agent_info = AgentInfo(traffic_simulator, incomes_expenses, features_data, learning_time,
                                optional_nests, scooters_num, epsilon, grid_len)
 
-        agent_chosen = consts['agent_chosen']
-
-        agent: DynamicAgent = AgentsFactory.build_dynamic_agent(agent_chosen, agent_info)
-
-        agent.learn(num_games=args.num_games, game_len=args.game_len, visualize=True)
+        # agent_chosen = consts['agent_chosen']
+        agent_chosen = args.agent_chosen
+        if agent_chosen in ['dynamic_RL', 'baseline_agent']:
+            agent: DynamicAgent = AgentsFactory.build_dynamic_agent(agent_chosen, agent_info)
+            agent.learn(num_games=args.num_games, game_len=args.game_len, visualize=True)
+        elif agent_chosen == 'genetic_algorithm':
+            agent: StaticAgent = AgentsFactory.build_static_agent(agent_chosen, agent_info)
+            agent.spread_scooters()
 
         # agent_chosen = "genetic_algorithm"
         #
@@ -226,6 +229,7 @@ if __name__ == '__main__':
                         help="number of games, each one starts with a random location")
     parser.add_argument("--game_len", action="store", type=int,
                         help="number of days in a game")
+    parser.add_argument("--agent_chosen", action="store", type=str)
     args = parser.parse_args()
     # TODO to be deleted in the future
     # if len(sys.argv) == 1:

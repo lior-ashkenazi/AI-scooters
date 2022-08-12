@@ -54,7 +54,7 @@ class BaselineAgent():
                 reward: float
                 rides_completed: List[Ride]
                 pre_nests_spread, next_day_scooters_locations, reward, rides_completed, used_scooters = \
-                    self.perform_step(scooters_locations, action, step_idx % 2)
+                    self.perform_step(scooters_locations, action, step_idx)
 
                 self.learn_avg(used_scooters)
 

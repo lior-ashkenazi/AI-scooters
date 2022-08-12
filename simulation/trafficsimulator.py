@@ -17,7 +17,7 @@ class TrafficSimulator:
         else:
             self._potential_rides = None
 
-    def get_simulation_result(self, scooters_initial_locations: Map, options_index) -> \
+    def get_simulation_result(self, scooters_initial_locations: Map, options_index=0) -> \
             Tuple[List[Ride], Map]:
         """
         :param scooters_initial_locations: scooters' initial location

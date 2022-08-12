@@ -71,7 +71,7 @@ class TrafficGenerator:
     def _get_default_data_options() -> List[str]:
         return [TrafficGenerator.LARGE, TrafficGenerator.MEDIUM, TrafficGenerator.SMALL]
 
-    def get_custom_data(self, samples_num: Optional[int], option_idx) -> List[Ride]:
+    def get_custom_data(self, samples_num: Optional[int], option_idx=0) -> List[Ride]:
         """
         we assume that we have files that contains:
         - industrial locations (list of coordinates)
@@ -96,17 +96,32 @@ class TrafficGenerator:
             - number of samples (that fits to the origin, destination, and start time)
         :return: all the samples created (list of rides)
         """
-        ind = [32.0753, 34.7718]
-        res = [32.0753, 34.7918]
+        option_idx = option_idx % 3
+        a1 = [32.0753, 34.7718]
+        a2 = [32.0753, 34.7918]
+        b1 = [32.0953, 34.7718]
+        b2 = [32.0953, 34.7918]
+        c1 = [32.0853, 34.7718]
+        c2 = [32.0853, 34.7918]
+
+        if option_idx == 0:
+            locations = [[a1, b1], [a2, b2], [a1, b2], [a2, b1]]
+            prob = [0.45, 0.45, 0.05, 0.05]
+        elif option_idx == 1:
+            locations = [[b1, c1], [b2, c2], [b1, a1], [b2, a2]]
+            prob = [0.45, 0.45, 0.05, 0.05]
+        elif option_idx == 2:
+            locations = [[c1, a1], [c2, a2]]
+            prob = [0.5, 0.5]
+        else:
+            assert False
 
         cov = np.array([[4.86247399e-06, 2.47087578e-06],
-                [2.47087578e-06, 3.38832923e-06]]) / 1000000
-        options = [(ind, res), (res, ind)]
+                        [2.47087578e-06, 3.38832923e-06]]) / 1000000
         rides: List[Ride] = []
-        option = options[option_idx]
-        for sample in range(samples_num):
-            # ride_idx = random.randrange(0, 4)
-            start_mean, end_mean = option
+        start_end_index_lst = np.random.choice(len(locations), samples_num, p=prob)
+        for start_end_index in start_end_index_lst:
+            (start_mean, end_mean) = locations[start_end_index]
             start_x, start_y = np.random.multivariate_normal(start_mean, cov)
             start_x = max(min(config.MAX_LATITUDE, start_x), config.MIN_LATITUDE)
             start_y = max(min(config.MAX_LONGITUDE, start_y), config.MIN_LONGITUDE)
