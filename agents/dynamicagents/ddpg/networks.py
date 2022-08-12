@@ -27,14 +27,14 @@ class CriticNetwork(keras.Model):
         self.both_fc1 = Dense(5, activation='relu', kernel_regularizer='l1')
         self.final = Dense(1, activation=None)
 
-    def call(self, state, action):
+    def call(self, state, action, extra_features):
         # state_res = self.state_conv1(state)
         # state_res = self.state_conv2(state_res)
         # state_res = self.state_conv3(state_res)
         state_res_flat = self.state_flat(state)
         # action_res = self.action_fc1(action)
         # action_res = self.action_fc2(action_res)
-        state_action_res = self.state_action_concat([state_res_flat, action])
+        state_action_res = self.state_action_concat([state_res_flat, action, extra_features])
 
         # state_action_res = self.state_action_concat([state_res_flat, action_res])
         state_action_res = self.both_fc1(state_action_res)

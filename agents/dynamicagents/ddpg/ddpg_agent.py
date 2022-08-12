@@ -56,7 +56,6 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
 
         self.update_network_parameters(target_update_rate=1)
         self.nest_bins = np.array([(n.x, n.y) for n in self.agent_info.optional_nests])
-        self.avg_end = np.ones((self.n_actions,)) / self.n_actions
         self.avg_start = np.ones((self.n_actions,)) / self.n_actions
         self.alpha = 1
 
@@ -76,10 +75,12 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
             weights.append(weight * target_update_rate + targets[i] * (1 - target_update_rate))
         self.target_critic.set_weights(weights)
 
-    def remember(self, memory, state, action, reward, next_state):
-        memory.store_transition(state, action, reward, next_state)
+    def remember(self, memory, state, extra_features, action, reward, next_state):
+        memory.store_transition(state, extra_features, action, reward, next_state)
 
     def save_models(self):
+        if not os.path.isdir(self.model_dir):
+            os.mkdir(self.model_dir)
         print('... saving models ...')
         # self.actor.save_weights(self.actor.checkpoint_file)
         # self.target_actor.save_weights(self.target_actor.checkpoint_file)
@@ -118,19 +119,20 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
         if memory.mem_cntr < self.batch_size:
             return 0, 0, [0], [0]
 
-        state, action, reward, next_state = memory.sample_buffer(self.batch_size)
+        state, extra_feature, action, reward, next_state = memory.sample_buffer(self.batch_size)
 
         states = tf.convert_to_tensor(state, dtype=tf.float32)
         next_states = tf.convert_to_tensor(next_state, dtype=tf.float32)
         rewards = tf.convert_to_tensor(reward, dtype=tf.float32)
         actions = tf.convert_to_tensor(action, dtype=tf.float32)
+        extra_features = tf.convert_to_tensor(extra_feature, dtype=tf.float32)
         actor_loss, critic_loss, critic_value_lst = 0, 0, [0]
         if grad_critic:
             with tf.GradientTape() as tape:
                 target_actions = self.target_actor(next_states)
-                critic_value_next = tf.squeeze(self.target_critic(
-                                    next_states, target_actions), 1)
-                critic_value = tf.squeeze(self.critic(states, actions), 1)
+                # critic_value_next = tf.squeeze(self.target_critic(
+                #                     next_states, target_actions), 1)
+                critic_value = tf.squeeze(self.critic(states, actions, extra_features), 1)
                 # target = rewards + self.decay_factor * critic_value_next
                 target = rewards
                 critic_loss = keras.losses.MSE(target, critic_value)
@@ -156,6 +158,18 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
         reward_lst = [v for v in rewards.numpy()]
         return critic_loss, actor_loss, critic_value_lst, reward_lst
 
+    def extract_extra_features(self, state, action):
+        locations_end_day = state[..., 1]
+        potential_rides_start = state[..., 0]
+
+        moving_dist = np.sum(np.abs(locations_end_day - action))
+        total_rides = self.agent_info.traffic_simulator._rides_per_day_part
+        unused_scooters = action * self.agent_info.scooters_num - potential_rides_start * total_rides
+        unused_scooters = np.sum(np.maximum(unused_scooters, 0)) / self.agent_info.scooters_num
+        return np.array([moving_dist, unused_scooters])
+
+
+
     def get_state(self, end_day_scooters_locations: Map, potential_starts: Map, normalize=True) -> np.ndarray:
         binx: np.ndarray
         biny: np.ndarray
@@ -166,16 +180,12 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
         end_dist_counts = np.bincount(end_dist.argmin(axis=0), minlength=self.n_actions)
         end_dist_counts = end_dist_counts / end_dist_counts.sum()
 
-        self.avg_end = (1 - self.alpha) * self.avg_end + self.alpha * end_dist_counts
-        cur_end_means = end_dist.mean(axis=1)
-
         start_dist = np.sum(110 * (startpoints[None, ...] - self.nest_bins[:, None, :]) **2, axis=-1)
         start_dist_counts = np.bincount(start_dist.argmin(axis=0), minlength=self.n_actions)
         start_dist_counts = start_dist_counts / start_dist_counts.sum()
         self.avg_start = (1 - self.alpha) * self.avg_start + self.alpha * start_dist_counts
-        cur_start_means = start_dist.mean(axis=1)
         return np.stack([self.avg_start,
-                         self.avg_end
+                         end_dist_counts
                          ], axis=-1)
                          # cur_start_means, cur_end_means], axis=-1)
         # return end_day_scooters_locations.get_points(), potential_starts.get_points()
@@ -292,14 +302,17 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
         # #random part
         if pretrain_critic:
             random_critic_loss, random_rewards, random_critic_values, random_actor_loss = [], [], [], []
-            for i in range(100):
-                print(i)
+            random_game_len = 20
+            for i in range(200):
                 scooters_locations: Map
                 state: np.ndarray
                 scooters_locations, state = self.get_start_state()
-                for step_idx in range(20):
+                random_cur_game_critic_loss = []
+                for step_idx in range(random_game_len):
+
                     action = np.random.random((self.n_actions,))
                     action = action / np.sum(action)
+                    # action = np.array([0.5, 0.5, 0, 0])
                     pre_nests_spread: List[NestAllocation]
                     next_day_scooters_locations: Map
                     next_state: np.ndarray
@@ -308,18 +321,21 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
                     pre_nests_spread, next_day_scooters_locations, next_state, reward, rides_completed = \
                         self.perform_step(scooters_locations, action, options_index)
                     options_index = (options_index + 1)
-                    self.remember(self.random_memory, state, action, reward, next_state)
+                    extra_features = self.extract_extra_features(state, action)
+                    self.remember(self.random_memory, state, extra_features, action, reward, next_state)
                     if not evaluate:
                         critic_loss, actor_loss, critic_values, reward_values = \
                         self.learn_batch(self.random_memory, grad_actor=False, grad_critic=True)
-                        random_critic_loss.append(critic_loss)
+                        random_cur_game_critic_loss.append(critic_loss)
                         random_rewards += reward_values
                         random_critic_values += critic_values
                     state = next_state
                     scooters_locations = next_day_scooters_locations
-                if i % 100 == 0:
-                    self.save_models()
-            self.save_models()
+                random_critic_loss += random_cur_game_critic_loss
+                print(i, f'critic loss {np.average(np.array(random_cur_game_critic_loss))}')
+                # if i % 100 == 0:
+            #         self.save_models()
+            # self.save_models()
             self.plot_results(total_critic_loss=random_critic_loss, total_critic_values=random_critic_values,
                                total_learn_rewards=random_rewards, total_actor_loss=total_actor_loss)
             return
@@ -337,7 +353,8 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
             score = 0
 
             for step_idx in range(game_len):
-                action: np.ndarray = self.get_action(state, evaluate)
+                # action: np.ndarray = self.get_action(state, evaluate)
+                action = np.array([0.5, 0.5, 0, 0])
                 pre_nests_spread: List[NestAllocation]
                 next_day_scooters_locations: Map
                 next_state: np.ndarray
@@ -350,7 +367,8 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
                 total_rewards.append(reward)
                 total_nest_allocations.append(pre_nests_spread)
                 score += reward
-                self.remember(self.memory, state, action, reward, next_state)
+                extra_features = self.extract_extra_features(state, action)
+                self.remember(self.memory, extra_features, state, action, reward, next_state)
                 if not evaluate:
                     critic_loss, actor_loss, critic_values, reward_values = \
                         self.learn_batch(self.memory, grad_actor=True, grad_critic=False)
