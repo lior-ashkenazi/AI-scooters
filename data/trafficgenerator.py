@@ -1,3 +1,5 @@
+import matplotlib.pyplot as plt
+
 from programio.abstractio import AbstractIO
 from data.trafficdatatypes import *
 from data.coordinates_sampler import CoordinatesSampler
@@ -103,8 +105,8 @@ class TrafficGenerator:
         b2 = [32.0953, 34.7918]
         c1 = [32.0853, 34.7718]
         c2 = [32.0853, 34.7918]
-        d1 = [32.0753, 34.8718]
-        d2 = [32.0953, 34.8918]
+        d1 = [32.0653, 34.7718]
+        d2 = [32.0653, 34.7918]
 
         cov = np.array([[4.86247399e-06, 2.47087578e-06],
                         [2.47087578e-06, 3.38832923e-06]]) / 1000000
@@ -115,13 +117,22 @@ class TrafficGenerator:
 
         for (start_mean, end_mean) in start_end_lst:
             start_x, start_y = np.random.multivariate_normal(start_mean, cov)
-            start_x = max(min(config.MAX_LATITUDE, start_x), config.MIN_LATITUDE)
-            start_y = max(min(config.MAX_LONGITUDE, start_y), config.MIN_LONGITUDE)
+            # start_x = max(min(config.MAX_LATITUDE, start_x), config.MIN_LATITUDE)
+            # start_y = max(min(config.MAX_LONGITUDE, start_y), config.MIN_LONGITUDE)
             end_x, end_y = np.random.multivariate_normal(end_mean, cov)
-            end_x = max(min(config.MAX_LATITUDE, end_x), config.MIN_LATITUDE)
-            end_y = max(min(config.MAX_LONGITUDE, end_y), config.MIN_LONGITUDE)
+            # end_x = max(min(config.MAX_LATITUDE, end_x), config.MIN_LATITUDE)
+            # end_y = max(min(config.MAX_LONGITUDE, end_y), config.MIN_LONGITUDE)
             ride = Ride(Point(start_x, start_y), Point(end_x, end_y), 8, 9)
             rides.append(ride)
+
+        plot = False
+        if plot:
+            start_points = np.array([ride.orig.to_numpy() for ride in rides])
+            end_points = np.array([ride.dest.to_numpy() for ride in rides])
+            # plt.scatter(points_arr[:, 0, 0], points_arr[:, 0, 1])
+            plt.scatter(end_points[:, 0], end_points[:, 1])
+            plt.show()
+
         return rides
 
 
