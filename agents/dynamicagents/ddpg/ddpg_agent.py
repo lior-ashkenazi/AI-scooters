@@ -22,8 +22,8 @@ import os
 
 
 class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
-    def __init__(self, env_agent_info, model_dir, unused_scooters_factor, actor_lr=2e-4, critic_lr=5e-3,
-                 decay_factor=0.6, max_size=250, target_update_rate=1e-3,
+    def __init__(self, env_agent_info, model_dir, unused_scooters_factor, actor_lr=5e-4, critic_lr=5e-3,
+                 decay_factor=0.8, max_size=250, target_update_rate=1e-3,
                  batch_size=64, noise=0.007):
         super(DdpgAgent, self).__init__(env_agent_info)
         self.model_dir = os.path.join(r'C:\Users\yonathanb\Desktop\studies\year3\semester2\ai\exercises\practical\AI-scooters\models', model_dir)
@@ -308,7 +308,7 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
 
         total_critic_loss, total_actor_loss, total_critic_values, total_learn_rewards = [], [], [], []
         options_index = 0
-        # #random part
+        # random part
         if pretrain_critic:
             random_critic_loss, random_rewards, random_critic_values, random_actor_loss = [], [], [], []
             random_game_len = 20
@@ -364,7 +364,7 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
 
             for step_idx in range(game_len):
                 action: np.ndarray = self.get_action(state, evaluate)
-                # action = np.array([1/2, 1/2, 0, 0])
+                # action = state[..., 0]
                 pre_nests_spread: List[NestAllocation]
                 next_day_scooters_locations: Map
                 next_state: np.ndarray

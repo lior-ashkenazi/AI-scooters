@@ -101,12 +101,18 @@ class TrafficGenerator:
         a2 = [32.0753, 34.7918]
         b1 = [32.0953, 34.7718]
         b2 = [32.0953, 34.7918]
+        c1 = [32.0853, 34.7718]
+        c2 = [32.0853, 34.7918]
+        d1 = [32.0753, 34.8718]
+        d2 = [32.0953, 34.8918]
 
         cov = np.array([[4.86247399e-06, 2.47087578e-06],
                         [2.47087578e-06, 3.38832923e-06]]) / 1000000
         rides: List[Ride] = []
-        part_size = int(samples_num/3)
-        start_end_lst = [(a1, a2)] * part_size + [(a2, a1)] * part_size + [(b1, b2)] * part_size
+        part_size = int(samples_num/6)
+        start_end_lst = [(a1, a2)] * part_size + [(a2, a1)] * part_size + [(b1, b2)] * part_size + \
+            [(c1, c2)] * part_size + [(c2, c1)] * part_size + [(d1, d2)] * part_size
+
         for (start_mean, end_mean) in start_end_lst:
             start_x, start_y = np.random.multivariate_normal(start_mean, cov)
             start_x = max(min(config.MAX_LATITUDE, start_x), config.MIN_LATITUDE)
