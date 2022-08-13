@@ -4,17 +4,13 @@ from data.trafficdatatypes import Map, NestAllocation, Ride
 from data.trafficgenerator import TrafficGenerator
 from agents.agent import AgentInfo
 class State:
-    def __init__(self, starting_points,
-                 scooter_spread,
-                 scooters_per_nest,
-                 unused_scooters
-                 ):
+    def __init__(self, starting_points, scooter_spread, scooters_per_nest, unused_scooters):
         self.starting_points = starting_points
         self.scooter_spread = scooter_spread
         self.scooters_per_nest = scooters_per_nest
-        self.unused_scooters = unused_scootes
+        self.unused_scooters = unused_scooters
 
-ACTION_PERCENTILES = [20 * i for i in range(5)]
+ACTION_PERCENTILES = [0.2 * i for i in range(5)]
 class FeatureExtractor:
     def __init__(self, agent_info):
         self.agent_info = agent_info
@@ -23,6 +19,7 @@ class FeatureExtractor:
         self.action_vec_shape = (self.n_actions ** 2 * len(ACTION_PERCENTILES)) + 1
         self.state_vec_shape = self.n_actions * 3
         self.feature_shape = self.state_vec_shape + self.action_vec_shape
+        self.scooters_num = agent_info.scooters_num
 
     def __call__(self, state, action):
         state_vec = self.state_to_vec(state)
@@ -87,6 +84,7 @@ class Qagent():
         self.agent_info = env_agent_info
         self.feature_extractor = FeatureExtractor(env_agent_info)
         self.n_actions = len(self.agent_info.optional_nests)
+        self.scooters_num = self.agent_info.scooters_num
         self.qvalues = dict()
 
         self.w = np.zeros(self.feature_extractor.feature_shape)
@@ -94,6 +92,7 @@ class Qagent():
         self.epsilon = float(epsilon)
         self.alpha = float(alpha)
         self.discount = float(gamma)
+
 
     def get_legal_actions(self, state: State):
         # start with nop
@@ -138,15 +137,17 @@ class Qagent():
                 action = self.get_policy(state, legal_actions)
         return action
 
-    def update(self, state, action, next_state, reward):
+    def update(self, state, action, next_state, reward, unused_scooters):
         """
            Should update your weights based on transition
         """
+        final_reward = reward[0] - reward[1] - (30 * unused_scooters)
+
         legal_actions = self.get_legal_actions(state)
         best_legal_action = max(self.getQValue(next_state, action) for action in legal_actions) \
             if len(legal_actions) > 0 else 0
         f = self.feature_extractor(state, action)
-        correction = (reward + self.discount * best_legal_action) - self.getQValue(state, action)
+        correction = (final_reward + self.discount * best_legal_action) - self.getQValue(state, action)
         self.w = self.w + (self.alpha * correction * f)
 
     def learn(self, num_games, game_len):
@@ -161,10 +162,10 @@ class Qagent():
             for step_idx in range(game_len):
                 action = self.get_action(state)
                 next_state, reward = self.perform_step(state, action, step_idx % 2)
-                print(state.scooters_per_nest, action, reward)
-                self.update(state, action, next_state, reward)
+                # print(state.scooters_per_nest, action, reward[0] - reward[1])
+                self.update(state, action, next_state, reward, next_state.unused_scooters)
                 total_rewards.append(reward)
-                score += reward
+                score += (reward[0] - reward[1])
                 state = next_state
 
             score /= game_len
@@ -181,16 +182,18 @@ class Qagent():
             get_scooters_location_from_nests_spread(new_nest_spread)
 
         # get simulation results - rides completed and scooters final location:
-        result: Tuple[List[Ride], Map, Map] = self.agent_info. \
+        result = self.agent_info. \
             traffic_simulator.get_simulation_result(scooters_based_on_new_spread, options_index)
         rides_completed = result[0]
         new_scooter_spread = result[1]
         starting_points = result[2]
+        unused_scooters = (self.scooters_num - len(rides_completed)) / self.scooters_num
         reward = self.agent_info.incomes_expenses.calculate_revenue(rides_completed,
                                                                     old_scooter_spread,
                                                                     scooters_based_on_new_spread)
         next_state = State(starting_points=starting_points,
-                           scooter_spread=new_scooter_spread, scooters_per_nest=np.array(new_nest_count))
+                           scooter_spread=new_scooter_spread, scooters_per_nest=np.array(new_nest_count),
+                           unused_scooters=unused_scooters)
         return next_state, reward
 
     def get_start_state(self):
@@ -198,12 +201,12 @@ class Qagent():
         nests = [NestAllocation(self.agent_info.optional_nests[i], nest_spread[i]) for i in range(len(nest_spread))]
         scooter_spread: Map = self.agent_info.traffic_simulator.\
             get_scooters_location_from_nests_spread(nests)
-        return State(scooter_spread, scooter_spread, nest_spread)
+        return State(scooter_spread, scooter_spread, nest_spread, 0)
 
     def get_new_nest_spread(self, old_nest_spread, action):
         new_nest_count = [val for val in old_nest_spread]
         if action != 'nop':
-            amount_to_add = max(new_nest_count[action[0]] - ACTION_PERCENTILES[action[2]], 0)
+            amount_to_add = round(new_nest_count[action[0]] * ACTION_PERCENTILES[action[2]])
             new_nest_count[action[0]] -= amount_to_add
             new_nest_count[action[1]] += amount_to_add
         return new_nest_count, [NestAllocation(self.agent_info.optional_nests[i], new_nest_count[i])
