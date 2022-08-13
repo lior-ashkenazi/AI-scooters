@@ -73,7 +73,7 @@ class TrafficGenerator:
     def _get_default_data_options() -> List[str]:
         return [TrafficGenerator.LARGE, TrafficGenerator.MEDIUM, TrafficGenerator.SMALL]
 
-    def get_custom_data(self, samples_num: Optional[int], option_idx=0) -> List[Ride]:
+    def get_custom_data(self, samples_num: Optional[int], option_idx=0, search_radius=None) -> List[Ride]:
         """
         we assume that we have files that contains:
         - industrial locations (list of coordinates)
@@ -109,7 +109,7 @@ class TrafficGenerator:
         d2 = [32.0653, 34.7918]
 
         cov = np.array([[4.86247399e-06, 2.47087578e-06],
-                        [2.47087578e-06, 3.38832923e-06]]) / 1000000
+                        [2.47087578e-06, 3.38832923e-06]]) / 10
         rides: List[Ride] = []
         part_size = int(samples_num/6)
         start_end_lst = [(a1, a2)] * part_size + [(a2, a1)] * part_size + [(b1, b2)] * part_size + \
@@ -125,14 +125,18 @@ class TrafficGenerator:
             ride = Ride(Point(start_x, start_y), Point(end_x, end_y), 8, 9)
             rides.append(ride)
 
-        plot = False
+        plot = True
         if plot:
+            fig, ax = plt.subplots()
             start_points = np.array([ride.orig.to_numpy() for ride in rides])
             end_points = np.array([ride.dest.to_numpy() for ride in rides])
-            # plt.scatter(points_arr[:, 0, 0], points_arr[:, 0, 1])
-            plt.scatter(end_points[:, 0], end_points[:, 1])
+            ax.scatter(start_points[:, 0], start_points[:, 1])
+            ax.scatter(end_points[:, 0], end_points[:, 1])
+            tmp_nest_points = [a1, a2, b1, b2, c1, c2, d1, d2]
+            for point in tmp_nest_points:
+                circle = plt.Circle(point, search_radius / 110, fill=False)
+                ax.add_patch(circle)
             plt.show()
-
         return rides
 
 
