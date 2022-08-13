@@ -42,7 +42,7 @@ MIN_DYNAMIC_RL_GRID_LENGTH = 1
 MAX_DYNAMIC_RL_GRID_LENGTH = 1000
 MIN_RL_EPSILON = 0
 MAX_RL_EPSILON = 1
-SEARCH_RADIUS = 0.2  # in km, todo - get this value as an input? what value to assign?
+SEARCH_RADIUS = 0.3  # in km, todo - get this value as an input? what value to assign?
 
 
 # this value should represent the radius in terms of euclidean

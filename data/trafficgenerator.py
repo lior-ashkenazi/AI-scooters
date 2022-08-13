@@ -109,7 +109,7 @@ class TrafficGenerator:
         d2 = [32.0653, 34.7918]
 
         cov = np.array([[4.86247399e-06, 2.47087578e-06],
-                        [2.47087578e-06, 3.38832923e-06]]) / 10
+                        [2.47087578e-06, 3.38832923e-06]]) / 2
         rides: List[Ride] = []
         part_size = int(samples_num/6)
         start_end_lst = [(a1, a2)] * part_size + [(a2, a1)] * part_size + [(b1, b2)] * part_size + \
@@ -125,7 +125,7 @@ class TrafficGenerator:
             ride = Ride(Point(start_x, start_y), Point(end_x, end_y), 8, 9)
             rides.append(ride)
 
-        plot = True
+        plot = False
         if plot:
             fig, ax = plt.subplots()
             start_points = np.array([ride.orig.to_numpy() for ride in rides])
