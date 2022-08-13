@@ -1,17 +1,20 @@
 {
-  "samples_num": 100,
-  "incomes_factor": 2,
-  "expenses_factor": 1,
+  "samples_num": 120,
+  "incomes_factor": 1,
+  "expenses_factor": 3,
+  "unused_scooters_factor": 5,
   "learning_time": 10,
   "optional_nests": [
-    [
-      32.0753, 34.7718
-    ],
-    [
-      32.0753, 34.7918
-    ]
+            [32.0753, 34.7718],
+            [32.0753, 34.7918],
+            [32.0953, 34.7718],
+            [32.0953, 34.7918],
+            [32.0853, 34.7718],
+            [32.0853, 34.7918],
+            [32.0753, 34.8718],
+            [32.0953, 34.8918]
   ],
-  "scooters_num": 100,
+  "scooters_num": 60,
   "epsilon": 0,
   "grid_len": 15,
   "agent_chosen": "dynamic_RL"

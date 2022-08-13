@@ -156,6 +156,7 @@ class NestsSelector:
                                                                const_rides=args.const_rides)
         incomes_factor: float = consts['incomes_factor']
         expenses_factor: float = consts['expenses_factor']
+        unused_scooters_factor = consts['unused_scooters_factor']
         incomes_expenses: IncomesExpenses = IncomesExpenses(incomes_factor,
                                                             expenses_factor)
         features_data: FeaturesData = self.features_data_generator. \
@@ -170,12 +171,16 @@ class NestsSelector:
         agent_info = AgentInfo(traffic_simulator, incomes_expenses, features_data, learning_time,
                                optional_nests, scooters_num, epsilon, grid_len)
 
-        agent_chosen = consts['agent_chosen']
-
-        # agent: DynamicAgent = AgentsFactory.build_dynamic_agent(agent_chosen, agent_info)
-        agent = Qagent(env_agent_info=agent_info)
-
-        agent.learn(num_games=args.num_games, game_len=args.game_len)
+        # agent_chosen = consts['agent_chosen']
+        agent_chosen = args.agent_chosen
+        if agent_chosen in ['dynamic_RL', 'baseline_agent']:
+            agent: DynamicAgent = AgentsFactory.build_dynamic_agent(agent_chosen, agent_info, model_dir=args.model_dir,
+                                                                    unused_scooters_factor=unused_scooters_factor)
+            agent.learn(num_games=args.num_games, game_len=args.game_len, visualize=True,
+                        pretrain_critic=args.pretrain_critic, load_checkpoint=args.load_critic)
+        elif agent_chosen == 'genetic_algorithm':
+            agent: StaticAgent = AgentsFactory.build_static_agent(agent_chosen, agent_info)
+            agent.spread_scooters()
 
         # agent_chosen = "genetic_algorithm"
         #
@@ -224,10 +229,14 @@ if __name__ == '__main__':
                         choices=NestsSelector.DEFAULT_DATA + NestsSelector.CUSTOM_DATA)
     parser.add_argument("--const_rides", action="store_true",
                         help="if true, it will use the same potential rides for each day")
+    parser.add_argument("--pretrain_critic", action="store_true")
+    parser.add_argument("--load_critic", action="store_true")
     parser.add_argument("--num_games", action="store", type=int,
                         help="number of games, each one starts with a random location")
     parser.add_argument("--game_len", action="store", type=int,
                         help="number of days in a game")
+    parser.add_argument("--agent_chosen", action="store", type=str)
+    parser.add_argument("--model_dir", action="store", type=str)
     args = parser.parse_args()
     # TODO to be deleted in the future
     # if len(sys.argv) == 1:
@@ -237,3 +246,4 @@ if __name__ == '__main__':
     #     io = GraphicIO() if args.io in NestsSelector.GRAPHIC_IO else ConsoleIO()
     #     ns = NestsSelector(io)
     #     ns.run()
+
