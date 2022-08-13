@@ -99,27 +99,29 @@ class TrafficGenerator:
         :return: all the samples created (list of rides)
         """
         # option_idx = option_idx % 3
-        a1 = [32.0753, 34.7718]
-        a2 = [32.0753, 34.7918]
-        b1 = [32.0953, 34.7718]
-        b2 = [32.0953, 34.7918]
-        c1 = [32.0853, 34.7718]
-        c2 = [32.0853, 34.7918]
-        d1 = [32.0653, 34.7718]
-        d2 = [32.0653, 34.7918]
+        large_residential_indices = [2, 8, 14, 12]
+        large_industrial_indices = [10, 9]
+        large_commercial_indices = [2, 25]
+        a1 = (config.RESIDENTIAL_CLUSTERS_MEANS[large_residential_indices[0]], config.RESIDENTIAL_CLUSTERS_COVARIANCES[large_residential_indices[0]])
+        a2 = (config.INDUSTRIAL_CLUSTERS_MEANS[large_industrial_indices[0]], config.INDUSTRIAL_CLUSTERS_COVARIANCES[large_industrial_indices[0]])
+        b1 = (config.RESIDENTIAL_CLUSTERS_MEANS[large_residential_indices[1]], config.RESIDENTIAL_CLUSTERS_COVARIANCES[large_residential_indices[1]])
+        b2 = (config.COMMERCIAL_CLUSTERS_MEANS[large_commercial_indices[0]], config.COMMERCIAL_CLUSTERS_COVARIANCES[large_commercial_indices[0]])
+        c1 = (config.RESIDENTIAL_CLUSTERS_MEANS[large_residential_indices[2]],
+              config.RESIDENTIAL_CLUSTERS_COVARIANCES[large_residential_indices[2]])
+        c2 = (config.INDUSTRIAL_CLUSTERS_MEANS[large_industrial_indices[1]], config.INDUSTRIAL_CLUSTERS_COVARIANCES[large_industrial_indices[1]])
+        d1 = (config.RESIDENTIAL_CLUSTERS_MEANS[large_residential_indices[3]], config.RESIDENTIAL_CLUSTERS_COVARIANCES[large_residential_indices[3]])
+        d2 = (config.COMMERCIAL_CLUSTERS_MEANS[large_commercial_indices[1]], config.COMMERCIAL_CLUSTERS_COVARIANCES[large_commercial_indices[1]])
 
-        cov = np.array([[4.86247399e-06, 2.47087578e-06],
-                        [2.47087578e-06, 3.38832923e-06]]) / 2
         rides: List[Ride] = []
         part_size = int(samples_num/6)
         start_end_lst = [(a1, a2)] * part_size + [(a2, a1)] * part_size + [(b1, b2)] * part_size + \
             [(c1, c2)] * part_size + [(c2, c1)] * part_size + [(d1, d2)] * part_size
 
-        for (start_mean, end_mean) in start_end_lst:
-            start_x, start_y = np.random.multivariate_normal(start_mean, cov)
+        for ((start_mean, start_cov), (end_mean, end_cov)) in start_end_lst:
+            start_x, start_y = np.random.multivariate_normal(start_mean, np.array(start_cov) / 100)
             # start_x = max(min(config.MAX_LATITUDE, start_x), config.MIN_LATITUDE)
             # start_y = max(min(config.MAX_LONGITUDE, start_y), config.MIN_LONGITUDE)
-            end_x, end_y = np.random.multivariate_normal(end_mean, cov)
+            end_x, end_y = np.random.multivariate_normal(end_mean, np.array(end_cov) / 100)
             # end_x = max(min(config.MAX_LATITUDE, end_x), config.MIN_LATITUDE)
             # end_y = max(min(config.MAX_LONGITUDE, end_y), config.MIN_LONGITUDE)
             ride = Ride(Point(start_x, start_y), Point(end_x, end_y), 8, 9)
@@ -132,7 +134,7 @@ class TrafficGenerator:
             end_points = np.array([ride.dest.to_numpy() for ride in rides])
             ax.scatter(start_points[:, 0], start_points[:, 1])
             ax.scatter(end_points[:, 0], end_points[:, 1])
-            tmp_nest_points = [a1, a2, b1, b2, c1, c2, d1, d2]
+            tmp_nest_points = [a1[0], a2[0], b1[0], b2[0], c1[0], c2[0], d1[0], d2[0]]
             for point in tmp_nest_points:
                 circle = plt.Circle(point, search_radius / 110, fill=False)
                 ax.add_patch(circle)
