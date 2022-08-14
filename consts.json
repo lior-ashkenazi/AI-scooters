@@ -17,5 +17,5 @@
   "scooters_num": 60,
   "epsilon": 0,
   "grid_len": 15,
-  "agent_chosen": "dynamic_RL"
+  "agent_chosen": "q_agent"
 }

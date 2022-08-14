@@ -13,7 +13,7 @@ import itertools as it
 
 class GeneticAlgorithmAgent(StaticAgent):
     BASE_NUMBER = 2
-    INITIAL_POPULATION_SIZE: int = 2000
+    INITIAL_POPULATION_SIZE: int = 200
     SIMULATION_DAYS_NUM = 10
     SELECTION_PERCENTILE = 80
     DECAY_FACTOR = 0.9

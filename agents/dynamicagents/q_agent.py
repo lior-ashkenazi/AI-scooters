@@ -10,23 +10,23 @@ class State:
         self.scooters_per_nest = scooters_per_nest
         self.unused_scooters = unused_scooters
 
-ACTION_PERCENTILES = [0.2 * i for i in range(5)]
+ACTION_PERCENTILES = [0.2 * i for i in range(1, 6)]
 class FeatureExtractor:
     def __init__(self, agent_info):
         self.agent_info = agent_info
         self.nest_bins = np.array([(n.x, n.y) for n in self.agent_info.optional_nests])
         self.n_actions = len(self.agent_info.optional_nests)
         self.action_vec_shape = (self.n_actions ** 2 * len(ACTION_PERCENTILES)) + 1
-        self.state_vec_shape = self.n_actions * 3
+        self.state_vec_shape = self.n_actions * 4
         self.feature_shape = self.state_vec_shape + self.action_vec_shape
         self.scooters_num = agent_info.scooters_num
 
     def __call__(self, state, action):
-        state_vec = self.state_to_vec(state)
+        state_vec = self.state_to_vec(state, action)
         action_to_vec = self.action_to_vec(action)
         return np.concatenate([state_vec, action_to_vec])
 
-    def state_to_vec(self, state):
+    def state_to_vec(self, state, action):
         binx: np.ndarray
         biny: np.ndarray
         endpoints = state.scooter_spread
@@ -51,9 +51,14 @@ class FeatureExtractor:
         # cur_start_means = start_dist.mean(axis=1)
 
         scooters_per_nest = state.scooters_per_nest / state.scooters_per_nest.sum()
-        return np.concatenate([end_dist_counts,
-                               start_dist_counts,
-                               scooters_per_nest])
+        next_scooters_per_nest, _ = get_new_nest_spread(old_nest_spread=state.scooters_per_nest,
+                                                action=action,
+                                                agent_info=self.agent_info)
+        next_scooters_per_nest = np.array(next_scooters_per_nest) / np.sum(next_scooters_per_nest)
+        return np.concatenate([end_dist_counts * scooters_per_nest,
+                               start_dist_counts * scooters_per_nest,
+                               end_dist_counts * next_scooters_per_nest,
+                               start_dist_counts * next_scooters_per_nest])
 
     # def state_to_vec(self, state):
     #
@@ -73,13 +78,10 @@ class FeatureExtractor:
             v[index] = 1
         return v
 
-
-
-
 class Qagent():
 
     def __init__(self,env_agent_info : AgentInfo,
-                 epsilon = 0.3, alpha = 1e-1, gamma=1e-1):
+                 epsilon=0.05, gamma=0.8, alpha=0.2):
 
         self.agent_info = env_agent_info
         self.feature_extractor = FeatureExtractor(env_agent_info)
@@ -126,11 +128,11 @@ class Qagent():
         i = np.random.randint(0, len(max_actions))
         return max_actions[i]
 
-    def get_action(self, state):
+    def get_action(self, state, evaluate):
         legal_actions = self.get_legal_actions(state)
         action = None
         if len(legal_actions) > 0:
-            if np.random.random() > self.epsilon:
+            if not evaluate and np.random.random() > self.epsilon:
                 i = np.random.randint(0, len(legal_actions))
                 return list(legal_actions)[i]
             else:
@@ -141,7 +143,7 @@ class Qagent():
         """
            Should update your weights based on transition
         """
-        final_reward = reward[0] - reward[1] - (30 * unused_scooters)
+        final_reward = reward[0] - reward[1]
 
         legal_actions = self.get_legal_actions(state)
         best_legal_action = max(self.getQValue(next_state, action) for action in legal_actions) \
@@ -150,7 +152,7 @@ class Qagent():
         correction = (final_reward + self.discount * best_legal_action) - self.getQValue(state, action)
         self.w = self.w + (self.alpha * correction * f)
 
-    def learn(self, num_games, game_len):
+    def learn(self, num_games, game_len, evaluate=False):
         best_score = float('-inf')
         score_history = []
         for i in range(num_games):
@@ -160,10 +162,12 @@ class Qagent():
 
             score = 0
             for step_idx in range(game_len):
-                action = self.get_action(state)
+                action = self.get_action(state, evaluate=evaluate)
                 next_state, reward = self.perform_step(state, action, step_idx % 2)
-                # print(state.scooters_per_nest, action, reward[0] - reward[1])
-                self.update(state, action, next_state, reward, next_state.unused_scooters)
+                if evaluate:
+                    print(state.scooters_per_nest, action, reward[0] - reward[1])
+                if not evaluate:
+                    self.update(state, action, next_state, reward, next_state.unused_scooters)
                 total_rewards.append(reward)
                 score += (reward[0] - reward[1])
                 state = next_state
@@ -176,8 +180,9 @@ class Qagent():
 
     def perform_step(self, state, action, options_index):
         old_scooter_spread = state.scooter_spread
-        new_nest_count, new_nest_spread = self.get_new_nest_spread(old_nest_spread=state.scooters_per_nest,
-                                                   action=action)
+        new_nest_count, new_nest_spread = get_new_nest_spread(old_nest_spread=state.scooters_per_nest,
+                                                              action=action,
+                                                              agent_info=self.agent_info)
         scooters_based_on_new_spread = self.agent_info.traffic_simulator.\
             get_scooters_location_from_nests_spread(new_nest_spread)
 
@@ -203,14 +208,17 @@ class Qagent():
             get_scooters_location_from_nests_spread(nests)
         return State(scooter_spread, scooter_spread, nest_spread, 0)
 
-    def get_new_nest_spread(self, old_nest_spread, action):
-        new_nest_count = [val for val in old_nest_spread]
-        if action != 'nop':
-            amount_to_add = round(new_nest_count[action[0]] * ACTION_PERCENTILES[action[2]])
-            new_nest_count[action[0]] -= amount_to_add
-            new_nest_count[action[1]] += amount_to_add
-        return new_nest_count, [NestAllocation(self.agent_info.optional_nests[i], new_nest_count[i])
-                for i in range(len(new_nest_count))]
+
+def get_new_nest_spread(old_nest_spread, action, agent_info):
+    import math
+    new_nest_count = [val for val in old_nest_spread]
+    if action != 'nop':
+        amount_to_add = math.ceil(new_nest_count[action[0]] * ACTION_PERCENTILES[action[2]])
+        # amount_to_add = min(ACTION_PERCENTILES[action[2]], new_nest_count[action[0]])
+        new_nest_count[action[0]] -= amount_to_add
+        new_nest_count[action[1]] += amount_to_add
+    return new_nest_count, [NestAllocation(agent_info.optional_nests[i], new_nest_count[i])
+            for i in range(len(new_nest_count))]
 
 
 def discretize(data, n):

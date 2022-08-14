@@ -17,7 +17,7 @@ class TrafficSimulator:
         else:
             self._potential_rides = None
 
-    def get_simulation_result(self, scooters_initial_locations: Map, options_index=0) -> \
+    def get_simulation_result(self, scooters_initial: Map, options_index=0) -> \
             Tuple[List[Ride], Map]:
         """
         :param scooters_initial_locations: scooters' initial location
@@ -25,6 +25,7 @@ class TrafficSimulator:
             - list of rides that were completed
             - map of final locations of scooters
         """
+        scooters_initial_locations = Map(scooters_initial.get_points().copy())
         # initialize datastructures
         if self._const_rides:
             potential_rides: List[Ride] = self._potential_rides

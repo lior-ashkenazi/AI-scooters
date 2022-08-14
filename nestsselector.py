@@ -182,6 +182,11 @@ class NestsSelector:
             agent: StaticAgent = AgentsFactory.build_static_agent(agent_chosen, agent_info)
             agent.spread_scooters()
 
+        elif agent_chosen == 'q_agent':
+            agent = Qagent(agent_info)
+            agent.learn(num_games=args.num_games, game_len=args.game_len)
+            agent.learn(num_games=5, game_len=args.game_len, evaluate=True)
+
         # agent_chosen = "genetic_algorithm"
         #
         # agent: StaticAgent = AgentsFactory.build_static_agent(agent_chosen, agent_info)
