@@ -318,7 +318,6 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
                 scooters_locations, state = self.get_start_state()
                 random_cur_game_critic_loss = []
                 for step_idx in range(random_game_len):
-
                     action = np.random.random((self.n_actions,))
                     action = action / np.sum(action)
                     # action = np.array([0.5, 0.5, 0, 0])
@@ -366,7 +365,11 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
                 action: np.ndarray = self.get_action(state, evaluate)
                 # print(action)
                 # action = state[..., 1]
-                # action = np.array([0.5, 0.0, 0, 0, 0.5, 0.0, 0, 0, 0, 0, 0, 0]) if step_idx % 2 == 0 else np.array([0.0, 0.5, 0, 0, 0.0, 0.5, 0, 0, 0, 0, 0, 0])
+                # action = np.zeros((self.n_actions,))
+                # if step_idx % 2 == 0:
+                #     action[:10:2] = 1/5
+                # else:
+                #     action[1:11:2] = 1/5
                 pre_nests_spread: List[NestAllocation]
                 next_day_scooters_locations: Map
                 next_state: np.ndarray

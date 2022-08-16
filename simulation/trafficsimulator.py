@@ -7,17 +7,18 @@ from data.trafficgenerator import TrafficGenerator
 
 class TrafficSimulator:
 
-    def __init__(self, rides_per_day_part, search_radius: int, const_rides: bool):
+    def __init__(self, rides_per_day_part, search_radius: int, const_rides: bool, mode):
         self._rides_per_day_part: int = rides_per_day_part
         self._traffic_generator: TrafficGenerator = TrafficGenerator(None)  # todo: check what to enter here
         self._search_radius: int = search_radius
         self._const_rides = const_rides
+        self._mode = mode
         if self._const_rides:
-            self._potential_rides = self._traffic_generator.get_custom_data(self._rides_per_day_part)
+            self._potential_rides = self._traffic_generator.get_custom_data(self._rides_per_day_part, mode=self._mode)
         else:
             self._potential_rides = None
 
-    def get_simulation_result(self, scooters_initial: Map, options_index=0) -> \
+    def get_simulation_result(self, scooters_initial: Map, option_idx=0) -> \
             Tuple[List[Ride], Map]:
         """
         :param scooters_initial_locations: scooters' initial location
@@ -30,8 +31,10 @@ class TrafficSimulator:
         if self._const_rides:
             potential_rides: List[Ride] = self._potential_rides
         else:
-            potential_rides: List[Ride] = self._traffic_generator.get_custom_data(self._rides_per_day_part, options_index,
-                                                                                  search_radius=self._search_radius)
+            potential_rides: List[Ride] = self._traffic_generator.get_custom_data(self._rides_per_day_part,
+                                                                                  option_idx=option_idx,
+                                                                                  search_radius=self._search_radius,
+                                                                                  mode=self._mode)
         potential_rides.sort(key=lambda r: r.start_time)
         available_scooters: Map = scooters_initial_locations
         starting_scooters_lst = []

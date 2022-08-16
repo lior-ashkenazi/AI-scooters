@@ -156,7 +156,7 @@ class NestsSelector:
 
         traffic_simulator: TrafficSimulator = TrafficSimulator(consts['samples_num'],
                                                                SEARCH_RADIUS,
-                                                               const_rides=args.const_rides)
+                                                               const_rides=args.const_rides, mode=args.mode)
         incomes_factor: float = consts['incomes_factor']
         expenses_factor: float = consts['expenses_factor']
         unused_scooters_factor = consts['unused_scooters_factor']
