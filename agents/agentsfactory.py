@@ -23,19 +23,22 @@ class AgentsFactory:
     AGENT_STATIC_SIMULATED_ANNEALING = "simulated_annealing"
     BASELINE_AGENT = "baseline_agent"
     CHEAP_AGENT = "cheap_agent"
+    GREEDY_AGENT = "greedy_agent"
 
     @staticmethod
     def build_dynamic_agent(choice: str, agent_info: AgentInfo, model_dir=None, unused_scooters_factor=None) -> DynamicAgent:
-        if choice == AgentsFactory.AGENT_DYNAMIC_RL:
-            return DdpgAgent(agent_info, model_dir=model_dir, unused_scooters_factor=unused_scooters_factor)
+        if choice in [AgentsFactory.AGENT_DYNAMIC_RL, AgentsFactory.CHEAP_AGENT, AgentsFactory.GREEDY_AGENT,
+                      AgentsFactory.AGENT_DYNAMIC_HUMAN]:
+            return DdpgAgent(agent_info, model_dir=model_dir, unused_scooters_factor=unused_scooters_factor,
+                             agent_type=choice)
         elif choice == AgentsFactory.AGENT_DYNAMIC_HUMAN:
             return HumanAgent(agent_info)
         if choice == AgentsFactory.AGENT_DYNAMIC_MIN_EXPENSES:
             return MinExpensesAgent(agent_info)
         if choice == AgentsFactory.BASELINE_AGENT:
             return BaselineAgent(agent_info)
-        if choice == AgentsFactory.CHEAP_AGENT:
-            return CheapAgent(agent_info)
+        # if choice == AgentsFactory.CHEAP_AGENT:
+        #     return CheapAgent(agent_info)
         raise ValueError("no such agent")
 
     @staticmethod

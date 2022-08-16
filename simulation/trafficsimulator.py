@@ -7,14 +7,14 @@ from data.trafficgenerator import TrafficGenerator
 
 class TrafficSimulator:
 
-    def __init__(self, rides_per_day_part, search_radius: int, const_rides: bool, mode):
+    def __init__(self, rides_per_day_part, search_radius: int, const_rides: bool, data_type):
         self._rides_per_day_part: int = rides_per_day_part
         self._traffic_generator: TrafficGenerator = TrafficGenerator(None)  # todo: check what to enter here
         self._search_radius: int = search_radius
         self._const_rides = const_rides
-        self._mode = mode
+        self.data_type = data_type
         if self._const_rides:
-            self._potential_rides = self._traffic_generator.get_custom_data(self._rides_per_day_part, mode=self._mode)
+            self._potential_rides = self._traffic_generator.get_custom_data(self._rides_per_day_part, mode=self.data_type)
         else:
             self._potential_rides = None
 
@@ -34,7 +34,7 @@ class TrafficSimulator:
             potential_rides: List[Ride] = self._traffic_generator.get_custom_data(self._rides_per_day_part,
                                                                                   option_idx=option_idx,
                                                                                   search_radius=self._search_radius,
-                                                                                  mode=self._mode)
+                                                                                  mode=self.data_type)
         potential_rides.sort(key=lambda r: r.start_time)
         available_scooters: Map = scooters_initial_locations
         starting_scooters_lst = []

@@ -147,16 +147,16 @@ class NestsSelector:
         self._show_dynamic_results(agent, avg_revenue)
 
     def run_demo(self, args):
-        if args.mode == 'cyclic':
+        if args.data_type == 'cyclic':
             consts_name = 'consts_cyclic.json'
-        elif args.mode == 'dead_end':
+        elif args.data_type == 'dead_end':
             consts_name = 'consts_dead_end.json'
         with open(consts_name, 'r') as f:
             consts = json.load(f)
 
         traffic_simulator: TrafficSimulator = TrafficSimulator(consts['samples_num'],
                                                                SEARCH_RADIUS,
-                                                               const_rides=args.const_rides, mode=args.mode)
+                                                               const_rides=args.const_rides, data_type=args.data_type)
         incomes_factor: float = consts['incomes_factor']
         expenses_factor: float = consts['expenses_factor']
         unused_scooters_factor = consts['unused_scooters_factor']
@@ -176,7 +176,7 @@ class NestsSelector:
 
         # agent_chosen = consts['agent_chosen']
         agent_chosen = args.agent_chosen
-        if agent_chosen in ['dynamic_RL', 'baseline_agent']:
+        if agent_chosen in ['dynamic_RL', 'baseline_agent', 'cheap_agent', 'greedy_agent', 'human']:
             agent: DynamicAgent = AgentsFactory.build_dynamic_agent(agent_chosen, agent_info, model_dir=args.model_dir,
                                                                     unused_scooters_factor=unused_scooters_factor)
             agent.learn(num_games=args.num_games, game_len=args.game_len, visualize=True,
@@ -240,7 +240,7 @@ if __name__ == '__main__':
                         help="number of days in a game")
     parser.add_argument("--agent_chosen", action="store", type=str)
     parser.add_argument("--model_dir", action="store", type=str)
-    parser.add_argument("--mode", action="store", type=str)
+    parser.add_argument("--data_type", action="store", type=str)
     args = parser.parse_args()
     # TODO to be deleted in the future
     # if len(sys.argv) == 1:

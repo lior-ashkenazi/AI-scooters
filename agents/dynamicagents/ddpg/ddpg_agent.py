@@ -22,10 +22,11 @@ import os
 
 
 class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
-    def __init__(self, env_agent_info, model_dir, unused_scooters_factor, actor_lr=5e-4, critic_lr=5e-3,
+    def __init__(self, env_agent_info, model_dir, unused_scooters_factor, agent_type, actor_lr=5e-4, critic_lr=5e-3,
                  decay_factor=0.8, max_size=250, target_update_rate=1e-3,
                  batch_size=64, noise=0.007):
         super(DdpgAgent, self).__init__(env_agent_info)
+        self.agent_type = agent_type
         self.model_dir = os.path.join(r'C:\Users\yonathanb\Desktop\studies\year3\semester2\ai\exercises\practical\AI-scooters\models', model_dir)
         self.unused_scooters_factor = unused_scooters_factor
         self.decay_factor = decay_factor
@@ -362,14 +363,23 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
             score, score_money = 0, 0
 
             for step_idx in range(game_len):
-                action: np.ndarray = self.get_action(state, evaluate)
-                # print(action)
-                # action = state[..., 1]
-                # action = np.zeros((self.n_actions,))
-                # if step_idx % 2 == 0:
-                #     action[:10:2] = 1/5
-                # else:
-                #     action[1:11:2] = 1/5
+                if self.agent_type == 'dynamic_RL':
+                    action: np.ndarray = self.get_action(state, evaluate)
+                elif self.agent_type == 'cheap_agent':
+                    action = state[..., 1]
+                elif self.agent_type == 'greedy_agent':
+                    action = state[..., 0]
+                elif self.agent_type == 'human':
+                    if self.agent_info.traffic_simulator.data_type == 'cyclic':
+                        action = np.zeros((self.n_actions,))
+                        if step_idx % 2 == 0:
+                            action[:10:2] = 1/5
+                        else:
+                            action[1:11:2] = 1/5
+                    elif self.agent_info.traffic_simulator.data_type == 'dead_end':
+                        action = np.zeros((self.n_actions,))
+                        action[[0, 1, 4, 5]] = 0.25
+
                 pre_nests_spread: List[NestAllocation]
                 next_day_scooters_locations: Map
                 next_state: np.ndarray

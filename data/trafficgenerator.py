@@ -109,6 +109,16 @@ class TrafficGenerator:
                                  [(gaussians['c2'], gaussians['c1'])] * part_size +\
                                  [(gaussians['d2'], gaussians['d1'])] * part_size +\
                                  [(gaussians['e2'], gaussians['e1'])] * part_size
+        elif mode == 'dead_end':
+            part_size = int(samples_num / 8)
+            start_end_lst = [(gaussians['a1'], gaussians['a2'])] * part_size + \
+                            [(gaussians['a2'], gaussians['a1'])] * part_size + \
+                            [(gaussians['b1'], gaussians['b2'])] * part_size + \
+                            [(gaussians['c1'], gaussians['c2'])] * part_size + \
+                            [(gaussians['c2'], gaussians['c1'])] * part_size + \
+                            [(gaussians['d1'], gaussians['d2'])] * part_size + \
+                            [(gaussians['e1'], gaussians['e2'])] * part_size + \
+                            [(gaussians['f1'], gaussians['f2'])] * part_size
         return start_end_lst
 
     def get_custom_data(self, samples_num: Optional[int], mode, option_idx=0, search_radius=None) -> List[Ride]:
@@ -138,7 +148,7 @@ class TrafficGenerator:
         """
         gaussians = self.get_gaussians()
         option_idx = option_idx % 2
-        start_end_lst = self.get_start_end('cyclic', gaussians, option_idx, samples_num)
+        start_end_lst = self.get_start_end(mode, gaussians, option_idx, samples_num)
         rides: List[Ride] = []
         for start_gauss, end_gauss in start_end_lst:
             # start_gauss, end_gauss = start_end[0], start_end[1]
