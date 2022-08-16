@@ -73,6 +73,9 @@ class TrafficGenerator:
     def _get_default_data_options() -> List[str]:
         return [TrafficGenerator.LARGE, TrafficGenerator.MEDIUM, TrafficGenerator.SMALL]
 
+    def get_start_end_lst(self, mode):
+
+
     def get_custom_data(self, samples_num: Optional[int], option_idx=0, search_radius=None) -> List[Ride]:
         """
         we assume that we have files that contains:
@@ -98,10 +101,9 @@ class TrafficGenerator:
             - number of samples (that fits to the origin, destination, and start time)
         :return: all the samples created (list of rides)
         """
-        # option_idx = option_idx % 3
-        large_residential_indices = [2, 8, 14, 12, 9, 11]
+        large_residential_indices = [2, 8, 14, 12, 9, 11] + [0, 1, 7, 2]
         large_industrial_indices = [10, 9]
-        large_commercial_indices = [2, 25, 21, 45]
+        large_commercial_indices = [2, 25, 21, 45] + [3, 8, 4, 5]
         a1 = (config.RESIDENTIAL_CLUSTERS_MEANS[large_residential_indices[0]], config.RESIDENTIAL_CLUSTERS_COVARIANCES[large_residential_indices[0]])
         a2 = (config.INDUSTRIAL_CLUSTERS_MEANS[large_industrial_indices[0]], config.INDUSTRIAL_CLUSTERS_COVARIANCES[large_industrial_indices[0]])
         b1 = (config.RESIDENTIAL_CLUSTERS_MEANS[large_residential_indices[1]], config.RESIDENTIAL_CLUSTERS_COVARIANCES[large_residential_indices[1]])
@@ -120,12 +122,33 @@ class TrafficGenerator:
         f2 = (config.COMMERCIAL_CLUSTERS_MEANS[large_commercial_indices[3]],
               config.COMMERCIAL_CLUSTERS_COVARIANCES[large_commercial_indices[3]])
 
+        g1 = (config.RESIDENTIAL_CLUSTERS_MEANS[large_residential_indices[6]],
+              config.RESIDENTIAL_CLUSTERS_COVARIANCES[large_residential_indices[6]])
+        g2 = (config.COMMERCIAL_CLUSTERS_MEANS[large_commercial_indices[4]],
+              config.COMMERCIAL_CLUSTERS_COVARIANCES[large_commercial_indices[4]])
+        h1 = (config.RESIDENTIAL_CLUSTERS_MEANS[large_residential_indices[7]],
+              config.RESIDENTIAL_CLUSTERS_COVARIANCES[large_residential_indices[7]])
+        h2 = (config.COMMERCIAL_CLUSTERS_MEANS[large_commercial_indices[5]],
+              config.COMMERCIAL_CLUSTERS_COVARIANCES[large_commercial_indices[5]])
+        i1 = (config.RESIDENTIAL_CLUSTERS_MEANS[large_residential_indices[8]],
+              config.RESIDENTIAL_CLUSTERS_COVARIANCES[large_residential_indices[8]])
+        i2 = (config.COMMERCIAL_CLUSTERS_MEANS[large_commercial_indices[6]],
+              config.COMMERCIAL_CLUSTERS_COVARIANCES[large_commercial_indices[6]])
+        j1 = (config.RESIDENTIAL_CLUSTERS_MEANS[large_residential_indices[9]],
+              config.RESIDENTIAL_CLUSTERS_COVARIANCES[large_residential_indices[9]])
+        j2 = (config.COMMERCIAL_CLUSTERS_MEANS[large_commercial_indices[7]],
+              config.COMMERCIAL_CLUSTERS_COVARIANCES[large_commercial_indices[7]])
 
+        option_idx = option_idx % 2
         rides: List[Ride] = []
-        part_size = int(samples_num/8)
-        start_end_lst = [(a1, a2)] * part_size + [(a2, a1)] * part_size + [(b1, b2)] * part_size + \
-            [(c1, c2)] * part_size + [(c2, c1)] * part_size + [(d1, d2)] * part_size + [(e1, e2)] * part_size + \
-            [(f1, f2)] * part_size
+        part_size = int(samples_num/6)
+        if option_idx % 2 == 0:
+            start_end_lst = [(a1, a2)] * part_size + [(b1, b2)] * part_size + [(c1, c2)] * part_size + [(d1, d2)] * part_size + \
+            [(e1, e2)] * part_size
+        else:
+            start_end_lst = [(a2, a1)] * part_size + [(b2, b1)] * part_size + [(c2, c1)] * part_size + [(d2, d1)] * part_size + \
+            [(e2, e1)] * part_size
+
 
         for ((start_mean, start_cov), (end_mean, end_cov)) in start_end_lst:
             start_x, start_y = np.random.multivariate_normal(start_mean, np.array(start_cov) / 100)
@@ -144,7 +167,8 @@ class TrafficGenerator:
             end_points = np.array([ride.dest.to_numpy() for ride in rides])
             ax.scatter(start_points[:, 0], start_points[:, 1])
             ax.scatter(end_points[:, 0], end_points[:, 1])
-            tmp_nest_points = [a1[0], a2[0], b1[0], b2[0], c1[0], c2[0], d1[0], d2[0], e1[0], e2[0], f1[0], f2[0]]
+            tmp_nest_points = [a1[0], a2[0], b1[0], b2[0], c1[0], c2[0], d1[0], d2[0], e1[0], e2[0], f1[0], f2[0],
+                               g1[0], g2[0], h1[0], h2[0], i1[0], i2[0], j1[0], j2[0]]
             for point in tmp_nest_points:
                 circle = plt.Circle(point, search_radius / 110, fill=False)
                 ax.add_patch(circle)

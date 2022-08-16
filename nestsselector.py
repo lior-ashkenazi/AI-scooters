@@ -147,7 +147,11 @@ class NestsSelector:
         self._show_dynamic_results(agent, avg_revenue)
 
     def run_demo(self, args):
-        with open('consts.json', 'r') as f:
+        if args.mode == 'cyclic':
+            consts_name = 'consts_cyclic.json'
+        elif args.mode == 'dead_end':
+            consts_name = 'consts_dead_end.json'
+        with open(consts_name, 'r') as f:
             consts = json.load(f)
 
         traffic_simulator: TrafficSimulator = TrafficSimulator(consts['samples_num'],
@@ -236,6 +240,7 @@ if __name__ == '__main__':
                         help="number of days in a game")
     parser.add_argument("--agent_chosen", action="store", type=str)
     parser.add_argument("--model_dir", action="store", type=str)
+    parser.add_argument("--mode", action="store", type=str)
     args = parser.parse_args()
     # TODO to be deleted in the future
     # if len(sys.argv) == 1:

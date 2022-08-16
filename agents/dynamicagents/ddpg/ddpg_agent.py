@@ -61,7 +61,7 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
         self.update_network_parameters(target_update_rate=1)
         self.nest_bins = np.array([(n.x, n.y) for n in self.agent_info.optional_nests])
         self.avg_start = np.ones((self.n_actions,)) / self.n_actions
-        self.alpha = 1
+        self.alpha = 0.2
 
     def update_network_parameters(self, target_update_rate=None):
         if target_update_rate is None:
@@ -312,7 +312,7 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
         if pretrain_critic:
             random_critic_loss, random_rewards, random_critic_values, random_actor_loss = [], [], [], []
             random_game_len = 20
-            for i in range(500):
+            for i in range(200):
                 scooters_locations: Map
                 state: np.ndarray
                 scooters_locations, state = self.get_start_state()
@@ -364,8 +364,9 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
 
             for step_idx in range(game_len):
                 action: np.ndarray = self.get_action(state, evaluate)
-                # action = state[..., 0]
-                # action = np.array([0.25, 0.25, 0, 0, 0.25, 0.25, 0, 0, 0, 0, 0, 0])
+                # print(action)
+                # action = state[..., 1]
+                # action = np.array([0.5, 0.0, 0, 0, 0.5, 0.0, 0, 0, 0, 0, 0, 0]) if step_idx % 2 == 0 else np.array([0.0, 0.5, 0, 0, 0.0, 0.5, 0, 0, 0, 0, 0, 0])
                 pre_nests_spread: List[NestAllocation]
                 next_day_scooters_locations: Map
                 next_state: np.ndarray

@@ -178,6 +178,8 @@ def optimal_transport(src: Map, dest: Map, plot=False) -> float:
     a, b = ot.unif(n), ot.unif(n)  # uniform distribution on samples
     M = ot.dist(xs, xt)
     M /= M.max()
+    if M.max() == 0:
+        return 0
     G0 = ot.emd(a, b, M)
     xs_arr_indices = np.nonzero(G0)[0]
     xt_arr_indices = np.nonzero(G0)[1]
