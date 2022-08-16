@@ -180,7 +180,7 @@ class NestsSelector:
                         pretrain_critic=args.pretrain_critic, load_checkpoint=args.load_critic)
         elif agent_chosen == 'genetic_algorithm':
             agent: StaticAgent = AgentsFactory.build_static_agent(agent_chosen, agent_info)
-            agent.spread_scooters()
+            agent.spread_scooters(dump=True)
 
         elif agent_chosen == 'q_agent':
             agent = Qagent(agent_info)

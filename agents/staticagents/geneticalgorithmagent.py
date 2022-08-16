@@ -1,4 +1,8 @@
 import numpy as np
+import os
+import matplotlib.pyplot as plt
+import imageio
+import pickle as pkl
 
 from agents.staticagent import StaticAgent
 from agents.agent import AgentInfo
@@ -14,12 +18,12 @@ import itertools as it
 
 class GeneticAlgorithmAgent(StaticAgent):
     BASE_NUMBER = 2
-    INITIAL_POPULATION_SIZE: int = 200
+    INITIAL_POPULATION_SIZE: int = 300
     SIMULATION_DAYS_NUM = 4
-    SELECTION_PERCENTILE = 95
-    DECAY_FACTOR = 0.8
+    SELECTION_PERCENTILE = 90
+    DECAY_FACTOR = 0.9
     MUTATION_FACTOR = 0.8
-    NOISE_FACTOR = 0.25
+    NOISE_FACTOR = 0.20
 
     def __init__(self, agent_info: AgentInfo):
         super(GeneticAlgorithmAgent, self).__init__(agent_info)
@@ -28,16 +32,22 @@ class GeneticAlgorithmAgent(StaticAgent):
         self._pop: np.ndarray = self._generate_population(
             GeneticAlgorithmAgent.INITIAL_POPULATION_SIZE)
 
-    def spread_scooters(self) -> Tuple[List[NestAllocation], float]:
+    def spread_scooters(self, dump=False) -> Tuple[List[NestAllocation], float]:
         generation = 0
+        log = dict()
         while self._pop.shape[0] > 1:
             generation += 1
             print(f"Simulating generation: {generation}, population: {len(self._pop)}")
             fitness_vals: List[float] = []
+            generation_log = list()
             for ind in self._pop:
-                fitness_vals.append(self._simulate_individual(ind))
+                income, expense, unused = self._simulate_individual(ind)
+                fitness_vals.append(income - expense - unused)
+                generation_log.append((income, expense, unused))
+            log[generation] = generation_log
+            best_fit = np.argmax(fitness_vals)
             print(f'Avg {round(np.average(fitness_vals), 2)} '
-                  f'Max: {round(np.max(fitness_vals), 2)}\n'
+                  f'Max fit: {round(fitness_vals[best_fit], 2)}\n'
                   f'Argmax: {self._pop[np.argmax(fitness_vals)]}')
             parents: np.ndarray = self._fit(fitness_vals)
             offspring: np.ndarray = self._crossover(parents)
@@ -45,6 +55,9 @@ class GeneticAlgorithmAgent(StaticAgent):
             self._pop = offspring
         # the population size is 1
         the_chosen_one = self._pop[0]
+        if dump:
+            with open('genetic.pkl', 'wb') as f:
+                pkl.dump(log, f)
         return self._get_nests_spread(the_chosen_one), self._simulate_individual(the_chosen_one)
 
     def _fit(self, fitness_vals):
@@ -52,6 +65,8 @@ class GeneticAlgorithmAgent(StaticAgent):
                                                        GeneticAlgorithmAgent.SELECTION_PERCENTILE)]
 
     def _crossover(self, parents):
+        if parents.shape[0] == 1:
+            return parents
         offspring = list()
         offspring_size = int(np.max([np.floor(
             self._pop.shape[0] * GeneticAlgorithmAgent.DECAY_FACTOR), 1]))
@@ -59,7 +74,7 @@ class GeneticAlgorithmAgent(StaticAgent):
         # note that a parent can survive a generation and continue to the next one as if he
         # reproduces with itself, he is born anew
         for i in range(offspring_size):
-            parent1, parent2 = parents[np.random.choice(parents.shape[0], size=2), :]
+            parent1, parent2 = parents[np.random.choice(parents.shape[0], size=2, replace=False), :]
             offspring.append(self._reproduce(parent1, parent2))
         return np.array(offspring)
 
@@ -83,8 +98,10 @@ class GeneticAlgorithmAgent(StaticAgent):
         return [NestAllocation(self.agent_info.optional_nests[i], scooters_num)
                 for i, scooters_num in enumerate(scooter_spread)]
 
-    def _simulate_individual(self, ind) -> Union[np.ndarray, float]:
-        total_revenue: List[float] = []
+    def _simulate_individual(self, ind):
+        income : List[float] = []
+        expense : List[float] = []
+        unused : List[float] = []
         prev_scooters_locations: Map = self._initial_scooters_locations
         ind_nests_spread: List[NestAllocation] = self._get_nests_spread(ind)
         ind_nests_locations: Map = self.agent_info.traffic_simulator. \
@@ -99,9 +116,11 @@ class GeneticAlgorithmAgent(StaticAgent):
             # compute revenue
             cur_revenue = self.agent_info.incomes_expenses.calculate_revenue(
                 rides_completed, prev_scooters_locations, ind_nests_locations)
-            total_revenue.append(cur_revenue[0] - cur_revenue[1] - 5 * unused_scooters)
+            income.append(cur_revenue[0])
+            expense.append(cur_revenue[1])
+            unused.append(unused_scooters)
             prev_scooters_locations = next_day_locations
-        return np.mean(total_revenue)
+        return np.mean(income), np.mean(expense), np.mean(unused)
 
     def _reproduce(self, parent1, parent2) -> np.ndarray:
         # todo attempt 1: half of coordinates from each parent
@@ -113,11 +132,16 @@ class GeneticAlgorithmAgent(StaticAgent):
         # todo attempt 2: average of vectors then normalize
 
     def _noise(self, offspring: np.ndarray) -> np.ndarray:
-        # add noise in 1 random coordinate for each offspring
-        noise = np.random.normal(scale=GeneticAlgorithmAgent.NOISE_FACTOR, size=len(offspring))
-        coords = np.random.randint(low=0, high=offspring.shape[1], size=offspring.shape[0])
+        n_offsprings, size_offspring = offspring.shape
         noisy_offspring = offspring.copy()
-        noisy_offspring[:, coords] += np.clip(noisy_offspring[:, coords] + noise, a_min=0, a_max=np.inf)
+
+        for i in range(n_offsprings // 4):
+            # add noise in 1 random coordinate for each offspring
+            noise = np.random.normal(scale=GeneticAlgorithmAgent.NOISE_FACTOR,
+                                     size=n_offsprings)
+            coords = np.random.randint(low=0, high=size_offspring, size=n_offsprings)
+            noisy_offspring[:, coords] += np.clip(noisy_offspring[:, coords] + noise, a_min=0, a_max=np.inf)
+        # normalize
         noisy_offspring = noisy_offspring / noisy_offspring.sum(axis=-1)[:, None]
         return noisy_offspring
     def discretize(self, action_data: np.ndarray) -> np.ndarray:
@@ -137,4 +161,3 @@ class GeneticAlgorithmAgent(StaticAgent):
         assert np.sum(data_discrete) == self.agent_info.scooters_num
         data_discrete = data_discrete.astype(int)
         return data_discrete
-
