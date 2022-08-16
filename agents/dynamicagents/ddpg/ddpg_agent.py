@@ -19,6 +19,7 @@ from data.trafficdatatypes import Map, NestAllocation, Ride
 from data.trafficgenerator import TrafficGenerator
 from programio.visualizer import Visualizer
 import os
+import pickle
 
 
 class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
@@ -286,7 +287,7 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
         reward = money - unused_scooters_amount * self.unused_scooters_factor
         # print(f'action {action}')
         # print(f'incomes {incomes}, expenses -{expenses}')
-        return prev_nests_spread, next_day_locations, next_state, reward, money, rides_completed
+        return prev_nests_spread, next_day_locations, next_state, reward, money, incomes, expenses, rides_completed
 
     def get_random_nest_spread(self):
         possible_scooters_spread = [comb for comb in
@@ -322,12 +323,12 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
                     action = np.random.random((self.n_actions,))
                     action = action / np.sum(action)
                     # action = np.array([0.5, 0.5, 0, 0])
-                    pre_nests_spread: List[NestAllocation]
+                    prev_nests_spread: List[NestAllocation]
                     next_day_scooters_locations: Map
                     next_state: np.ndarray
                     reward: float
                     rides_completed: List[Ride]
-                    pre_nests_spread, next_day_scooters_locations, next_state, reward, money, rides_completed = \
+                    prev_nests_spread, next_day_scooters_locations, next_state, reward, money, incomes, expenses, rides_completed = \
                         self.perform_step(scooters_locations, action, options_index)
                     options_index = (options_index + 1)
                     extra_features = self.extract_extra_features(state, action)
@@ -351,16 +352,16 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
             return
 
         #real games
+        total_actions, total_income_expense = [], []
+
         for i in range(num_games):
             scooters_locations: Map
             state: np.ndarray
             scooters_locations, state = self.get_start_state()
 
-            total_rides: List[List[Ride]] = []
-            total_nest_allocations: List[List[NestAllocation]] = []
-            total_rewards: List[float] = []
+            cur_game_spread, cur_game_rides, cur_game_money = [], [], []
 
-            score, score_money = 0, 0
+            score, score_money, cur_game_incomes, cur_game_expenses = 0, 0, 0, 0
 
             for step_idx in range(game_len):
                 if self.agent_type == 'dynamic_RL':
@@ -379,24 +380,26 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
                     elif self.agent_info.traffic_simulator.data_type == 'dead_end':
                         action = np.zeros((self.n_actions,))
                         action[[0, 1, 4, 5]] = 0.25
-
-                pre_nests_spread: List[NestAllocation]
+                total_actions.append(action)
+                prev_nests_spread: List[NestAllocation]
                 next_day_scooters_locations: Map
                 next_state: np.ndarray
                 reward: float
                 rides_completed: List[Ride]
-                pre_nests_spread, next_day_scooters_locations, next_state, reward, money, rides_completed = \
+                prev_nests_spread, next_day_scooters_locations, next_state, reward, money, incomes, expenses, rides_completed = \
                     self.perform_step(scooters_locations, action, options_index)
                 options_index = (options_index + 1)
-                total_rides.append(rides_completed)
-                total_rewards.append(reward)
-                total_nest_allocations.append(pre_nests_spread)
+                cur_game_rides.append(rides_completed)
+                cur_game_incomes += incomes
+                cur_game_expenses += expenses
+                cur_game_spread.append(prev_nests_spread)
+                cur_game_money.append(money)
                 score += reward
                 score_money += money
                 extra_features = self.extract_extra_features(state, action)
                 if step_idx != 0:
                     self.remember(self.memory, state, extra_features, action, reward, next_state)
-                if not evaluate:
+                if not evaluate and self.agent_type == 'dynamic_RL':
                     critic_loss, actor_loss, critic_values, reward_values = \
                         self.learn_batch(self.memory, grad_actor=True, grad_critic=True)
                     total_critic_loss.append(critic_loss)
@@ -414,6 +417,9 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
 
             score /= game_len
             score_money /= game_len
+            cur_game_incomes /= game_len
+            cur_game_expenses /= game_len
+            total_income_expense.append({'income': cur_game_incomes, 'expenses': cur_game_expenses})
             score_history.append(score)
             score_money_history.append(score_money)
             avg_score = np.mean(score_history[-7:])
@@ -429,7 +435,22 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
 
         self.plot_results(total_critic_loss=total_critic_loss, total_critic_values=total_critic_values,
                           total_learn_rewards=total_learn_rewards, total_actor_loss=total_actor_loss)
+        self.save_results(total_actions, score_money_history, total_income_expense, cur_game_money,
+                          cur_game_spread, cur_game_rides)
         return
+
+    def save_results(self, total_actions, total_rewards, total_incomes_expenses, last_game_rewards, last_game_spread,
+                     last_game_rides):
+        results = {'total_actions': total_actions, 'total_money': total_rewards,
+                   'total_incomes_expenses': total_incomes_expenses, 'last_game_money': last_game_rewards,
+                   'last_game_spread': last_game_spread, 'last_game_rides': last_game_rides,
+                   'nest_locations': self.agent_info.optional_nests}
+        output_path = os.path.join(self.model_dir, f'{self.agent_type}_{self.agent_info.traffic_simulator.data_type}.pkl')
+        with open(output_path, 'wb') as output_file:
+            pickle.dump(results, output_file)
+        with open(output_path, 'rb') as input_file:
+            data = pickle.load(input_file)
+        a = 1
 
     @staticmethod
     def plot_results(total_critic_loss, total_critic_values, total_learn_rewards, total_actor_loss):
