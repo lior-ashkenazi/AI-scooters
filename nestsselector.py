@@ -148,9 +148,9 @@ class NestsSelector:
         self._show_dynamic_results(agent, avg_revenue)
 
     def run_demo(self, args):
-        if args.data_type == 'cyclic':
+        if args.data_type in ['cyclic', 'cyclic_random']:
             consts_name = 'consts_cyclic.json'
-        elif args.data_type == 'dead_end':
+        elif args.data_type in ['dead_end', 'dead_end_random']:
             consts_name = 'consts_dead_end.json'
         with open(consts_name, 'r') as f:
             consts = json.load(f)
@@ -177,7 +177,7 @@ class NestsSelector:
 
         # agent_chosen = consts['agent_chosen']
         agent_chosen = args.agent_chosen
-        if agent_chosen in ['dynamic_RL', 'baseline_agent', 'cheap_agent', 'greedy_agent', 'human']:
+        if agent_chosen in ['dynamic_RL', 'baseline_agent', 'cheap_agent', 'greedy_agent', 'human', 'uniform_agent']:
             agent: DynamicAgent = AgentsFactory.build_dynamic_agent(agent_chosen, agent_info, model_dir=args.model_dir,
                                                                     unused_scooters_factor=unused_scooters_factor)
             agent.learn(num_games=args.num_games, game_len=args.game_len, visualize=True,
@@ -190,6 +190,8 @@ class NestsSelector:
             agent = Qagent(agent_info)
             agent.learn(num_games=args.num_games, game_len=args.game_len)
             agent.learn(num_games=5, game_len=args.game_len, evaluate=True)
+        else:
+            assert False and 'not a valid agent'
 
         # agent_chosen = "genetic_algorithm"
         #

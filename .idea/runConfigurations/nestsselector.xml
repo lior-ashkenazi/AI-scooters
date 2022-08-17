@@ -12,7 +12,7 @@
     <option name="ADD_CONTENT_ROOTS" value="true" />
     <option name="ADD_SOURCE_ROOTS" value="true" />
     <option name="SCRIPT_NAME" value="$PROJECT_DIR$/nestsselector.py" />
-    <option name="PARAMETERS" value="--num_games 50 --game_len 50 --agent_chosen genetic_algorithm --model_dir new_dead_end_genetic_unused_factor --data_type dead_end --load_critic" />
+    <option name="PARAMETERS" value="--num_games 20 --game_len 50 --agent_chosen uniform_agent --model_dir random_data --data_type cyclic_random --load_critic" />
     <option name="SHOW_COMMAND_LINE" value="false" />
     <option name="EMULATE_TERMINAL" value="false" />
     <option name="MODULE_MODE" value="false" />

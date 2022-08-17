@@ -42,9 +42,10 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
         self.max_action = 1
         self.noise = noise
         # self.actor = ActorNetwork(env_agent_info, name='actor')
-        self.actor = ActorNetwork(self.n_actions, name='actor', scooters_num=self.agent_info.scooters_num,
+        data_type = self.agent_info.traffic_simulator.data_type
+        self.actor = ActorNetwork(self.n_actions, name=f'actor_{data_type}', scooters_num=self.agent_info.scooters_num,
                                   rides_num=self.agent_info.traffic_simulator._rides_per_day_part)
-        self.critic = CriticNetwork(name='critic', chkpt_dir=self.model_dir)
+        self.critic = CriticNetwork(name=f'critic_{data_type}', chkpt_dir=self.model_dir)
         # self.target_actor = ActorNetwork(env_agent_info,
         #                                  name='target_actor')
         self.target_actor = ActorNetwork(self.n_actions,
@@ -370,8 +371,11 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
                     action = state[..., 1]
                 elif self.agent_type == 'greedy_agent':
                     action = state[..., 0]
+                elif self.agent_type == 'uniform_agent':
+                    action = np.ones((self.n_actions,))
+                    action /= np.sum(action)
                 elif self.agent_type == 'human':
-                    if self.agent_info.traffic_simulator.data_type == 'cyclic':
+                    if self.agent_info.traffic_simulator.data_type in ['cyclic', 'cyclic_random']:
                         action = np.zeros((self.n_actions,))
                         if step_idx % 2 == 0:
                             action[:10:2] = 1/5

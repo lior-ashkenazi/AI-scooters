@@ -24,11 +24,12 @@ class AgentsFactory:
     BASELINE_AGENT = "baseline_agent"
     CHEAP_AGENT = "cheap_agent"
     GREEDY_AGENT = "greedy_agent"
+    UNIFORM_AGENT = "uniform_agent"
 
     @staticmethod
     def build_dynamic_agent(choice: str, agent_info: AgentInfo, model_dir=None, unused_scooters_factor=None) -> DynamicAgent:
         if choice in [AgentsFactory.AGENT_DYNAMIC_RL, AgentsFactory.CHEAP_AGENT, AgentsFactory.GREEDY_AGENT,
-                      AgentsFactory.AGENT_DYNAMIC_HUMAN]:
+                      AgentsFactory.AGENT_DYNAMIC_HUMAN, AgentsFactory.UNIFORM_AGENT]:
             return DdpgAgent(agent_info, model_dir=model_dir, unused_scooters_factor=unused_scooters_factor,
                              agent_type=choice)
         elif choice == AgentsFactory.AGENT_DYNAMIC_HUMAN:
@@ -64,3 +65,4 @@ class AgentsFactory:
         return [AgentsFactory.AGENT_DYNAMIC_RL,
                 AgentsFactory.AGENT_DYNAMIC_HUMAN,
                 AgentsFactory.AGENT_DYNAMIC_MIN_EXPENSES]
+
