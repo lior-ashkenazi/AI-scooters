@@ -95,25 +95,25 @@ class TrafficGenerator:
         return gaussians
 
     def get_start_end(self, mode, gaussians, option_idx, samples_num):
-        if mode == 'cyclic':
+        if mode in ['cyclic', 'cyclic_random']:
             part_size = int(samples_num / 5)
             lst1 = [gaussians['a1']] * part_size + [gaussians['b1']] * part_size + \
                    [gaussians['c1']] * part_size + [gaussians['d1']] * part_size + \
-                   [gaussians['e1']]
-
+                   [gaussians['e1']] * part_size
+            lst2 = [gaussians['a2']] * part_size + [gaussians['b2']] * part_size + \
+                   [gaussians['c2']] * part_size + [gaussians['d2']] * part_size + \
+                   [gaussians['e2']] * part_size
 
             if option_idx % 2 == 0:
-                start_end_lst = [(gaussians['a1'], gaussians['a2'])] * part_size +\
-                                 [(gaussians['b1'], gaussians['b2'])] * part_size +\
-                                 [(gaussians['c1'], gaussians['c2'])] * part_size +\
-                                 [(gaussians['d1'], gaussians['d2'])] * part_size +\
-                                 [(gaussians['e1'], gaussians['e2'])] * part_size
+                start_lst = lst1
+                end_lst = lst2
             else:
-                start_end_lst = [(gaussians['a2'], gaussians['a1'])] * part_size +\
-                                 [(gaussians['b2'], gaussians['b1'])] * part_size +\
-                                 [(gaussians['c2'], gaussians['c1'])] * part_size +\
-                                 [(gaussians['d2'], gaussians['d1'])] * part_size +\
-                                 [(gaussians['e2'], gaussians['e1'])] * part_size
+                start_lst = lst2
+                end_lst = lst1
+            if mode == 'cyclic_random':
+                random.shuffle(end_lst)
+            start_end_lst = zip(start_lst, end_lst)
+
         elif mode == 'dead_end':
             part_size = int(samples_num / 8)
             start_end_lst = [(gaussians['a1'], gaussians['a2'])] * part_size + \
