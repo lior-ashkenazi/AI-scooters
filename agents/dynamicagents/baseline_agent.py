@@ -34,7 +34,7 @@ class BaselineAgent():
         return end_day_scooters_locations
         # return end_day_scooters_locations, state
 
-    def learn(self, num_games, game_len, visualize):
+    def learn(self, num_games, game_len, **kwargs):
         best_score = float('-inf')
         score_history = []
         for i in range(num_games):
@@ -61,7 +61,7 @@ class BaselineAgent():
                 total_rides.append(rides_completed)
                 total_rewards.append(reward)
                 total_nest_allocations.append(pre_nests_spread)
-                score += reward
+                score += (reward[0] - reward[1])
                 scooters_locations = next_day_scooters_locations
 
             # if visualize and (i == num_games - 1):
@@ -99,7 +99,7 @@ class BaselineAgent():
         used_scooters: List = result[3]
 
         # compute revenue
-        reward: float = self.agent_info.incomes_expenses.calculate_revenue(
+        reward = self.agent_info.incomes_expenses.calculate_revenue(
             rides_completed, prev_scooters_locations, prev_nests_locations)
         return prev_nests_spread, next_day_locations, reward, rides_completed, used_scooters
 

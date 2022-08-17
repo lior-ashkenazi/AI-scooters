@@ -10,7 +10,7 @@ from data.trafficgenerator import TrafficGenerator
 class DynamicAgent(Agent):
 
     @abstractmethod
-    def learn(self, num_games, game_len, visualize) -> None:
+    def learn(self, num_games, game_len, visualize=False) -> None:
         """
         use data from self.agent_info (inherited from class Agent) to use data in
         order to learn

@@ -6,6 +6,7 @@ from programio.graphicalio import GraphicIO
 
 from agents.agent import AgentInfo
 from agents.staticagent import StaticAgent
+from agents.dynamicagents.q_agent import Qagent
 from agents.dynamicagent import DynamicAgent
 from agents.agentsfactory import AgentsFactory
 
@@ -183,7 +184,12 @@ class NestsSelector:
                         pretrain_critic=args.pretrain_critic, load_checkpoint=args.load_critic)
         elif agent_chosen == 'genetic_algorithm':
             agent: StaticAgent = AgentsFactory.build_static_agent(agent_chosen, agent_info)
-            agent.spread_scooters()
+            agent.spread_scooters(dump=True)
+
+        elif agent_chosen == 'q_agent':
+            agent = Qagent(agent_info)
+            agent.learn(num_games=args.num_games, game_len=args.game_len)
+            agent.learn(num_games=5, game_len=args.game_len, evaluate=True)
 
         # agent_chosen = "genetic_algorithm"
         #
