@@ -381,9 +381,11 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
                             action[:10:2] = 1/5
                         else:
                             action[1:11:2] = 1/5
-                    elif self.agent_info.traffic_simulator.data_type == 'dead_end':
+                    elif self.agent_info.traffic_simulator.data_type in ['dead_end', 'dead_end_random']:
                         action = np.zeros((self.n_actions,))
                         action[[0, 1, 4, 5]] = 0.25
+                else:
+                    assert False and 'not a valid agent type'
                 total_actions.append(action)
                 prev_nests_spread: List[NestAllocation]
                 next_day_scooters_locations: Map
@@ -439,13 +441,13 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
 
         self.plot_results(total_critic_loss=total_critic_loss, total_critic_values=total_critic_values,
                           total_learn_rewards=total_learn_rewards, total_actor_loss=total_actor_loss)
-        self.save_results(total_actions, score_money_history, total_income_expense, cur_game_money,
+        self.save_results(total_actions, score_money_history, score_history, total_income_expense, cur_game_money,
                           cur_game_spread, cur_game_rides)
         return
 
-    def save_results(self, total_actions, total_rewards, total_incomes_expenses, last_game_rewards, last_game_spread,
+    def save_results(self, total_actions, total_money, total_reward, total_incomes_expenses, last_game_rewards, last_game_spread,
                      last_game_rides):
-        results = {'total_actions': total_actions, 'total_money': total_rewards,
+        results = {'total_actions': total_actions, 'total_money': total_money, 'total_reward': total_reward,
                    'total_incomes_expenses': total_incomes_expenses, 'last_game_money': last_game_rewards,
                    'last_game_spread': last_game_spread, 'last_game_rides': last_game_rides,
                    'nest_locations': self.agent_info.optional_nests}

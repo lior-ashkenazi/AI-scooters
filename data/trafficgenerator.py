@@ -114,16 +114,34 @@ class TrafficGenerator:
                 random.shuffle(end_lst)
             start_end_lst = zip(start_lst, end_lst)
 
-        elif mode == 'dead_end':
+        elif mode in ['dead_end', 'dead_end_random']:
             part_size = int(samples_num / 8)
-            start_end_lst = [(gaussians['a1'], gaussians['a2'])] * part_size + \
-                            [(gaussians['a2'], gaussians['a1'])] * part_size + \
-                            [(gaussians['b1'], gaussians['b2'])] * part_size + \
-                            [(gaussians['c1'], gaussians['c2'])] * part_size + \
-                            [(gaussians['c2'], gaussians['c1'])] * part_size + \
-                            [(gaussians['d1'], gaussians['d2'])] * part_size + \
-                            [(gaussians['e1'], gaussians['e2'])] * part_size + \
-                            [(gaussians['f1'], gaussians['f2'])] * part_size
+            both1 = [gaussians['a1']] * part_size + [gaussians['c1']] * part_size
+            both2 = [gaussians['a2']] * part_size + [gaussians['c2']] * part_size
+            start_both = both1 + both2
+            end_both = both2 + both1
+
+            start_single = [gaussians['b1']] * part_size + [gaussians['d1']] * part_size + \
+                           [gaussians['e1']] * part_size + [gaussians['f1']] * part_size
+            end_single = [gaussians['b2']] * part_size + [gaussians['d2']] * part_size + \
+                         [gaussians['e2']] * part_size + [gaussians['f2']] * part_size
+
+            if mode == 'dead_end_random':
+                random.shuffle(end_both)
+                random.shuffle(end_single)
+
+            start_lst = start_both + start_single
+            end_lst = end_both + end_single
+            start_end_lst = zip(start_lst, end_lst)
+
+            # start_end_lst = [(gaussians['a1'], gaussians['a2'])] * part_size + \
+            #                 [(gaussians['a2'], gaussians['a1'])] * part_size + \
+            #                 [(gaussians['b1'], gaussians['b2'])] * part_size + \
+            #                 [(gaussians['c1'], gaussians['c2'])] * part_size + \
+            #                 [(gaussians['c2'], gaussians['c1'])] * part_size + \
+            #                 [(gaussians['d1'], gaussians['d2'])] * part_size + \
+            #                 [(gaussians['e1'], gaussians['e2'])] * part_size + \
+            #                 [(gaussians['f1'], gaussians['f2'])] * part_size
         return start_end_lst
 
     def get_custom_data(self, samples_num: Optional[int], mode, option_idx=0, search_radius=None) -> List[Ride]:
@@ -174,6 +192,8 @@ class TrafficGenerator:
             for point in tmp_nest_points:
                 circle = plt.Circle(point, search_radius / 110, fill=False)
                 ax.add_patch(circle)
+            for (start, end) in zip(start_points, end_points):
+                ax.plot([start[0], end[0]], [start[1], end[1]])
             plt.show()
         return rides
 
