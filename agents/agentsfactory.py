@@ -42,13 +42,13 @@ class AgentsFactory:
         raise ValueError("no such agent")
 
     @staticmethod
-    def build_static_agent(choice: str, agent_info: AgentInfo) -> StaticAgent:
+    def build_static_agent(choice: str, agent_info: AgentInfo, model_dir=None) -> StaticAgent:
         if choice == AgentsFactory.AGENT_STATIC_RL:
             return StaticRLAgent(agent_info)
         elif choice == AgentsFactory.AGENT_STATIC_BRUTEFORCE:
             return BruteForceAgent(agent_info)
         elif choice == AgentsFactory.AGENT_STATIC_GENETIC_ALGORITHM:
-            return GeneticAlgorithmAgent(agent_info)
+            return GeneticAlgorithmAgent(agent_info, model_dir=model_dir)
         elif choice == AgentsFactory.AGENT_STATIC_SIMULATED_ANNEALING:
             return SimulatedAnnealingAgent(agent_info)
         raise ValueError("no such agent")

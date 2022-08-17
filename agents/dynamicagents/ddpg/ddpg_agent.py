@@ -19,7 +19,7 @@ from data.trafficdatatypes import Map, NestAllocation, Ride
 from data.trafficgenerator import TrafficGenerator
 from programio.visualizer import Visualizer
 import os
-import pickle
+import pickle as pkl
 
 
 class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
@@ -28,7 +28,7 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
                  batch_size=64, noise=0.007):
         super(DdpgAgent, self).__init__(env_agent_info)
         self.agent_type = agent_type
-        self.model_dir = os.path.join(r'C:\Users\yonathanb\Desktop\studies\year3\semester2\ai\exercises\practical\AI-scooters\models', model_dir)
+        self.model_dir = os.path.join('models', model_dir)
         self.unused_scooters_factor = unused_scooters_factor
         self.decay_factor = decay_factor
         self.target_update_rate = target_update_rate
@@ -447,9 +447,9 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
                    'nest_locations': self.agent_info.optional_nests}
         output_path = os.path.join(self.model_dir, f'{self.agent_type}_{self.agent_info.traffic_simulator.data_type}.pkl')
         with open(output_path, 'wb') as output_file:
-            pickle.dump(results, output_file)
+            pkl.dump(results, output_file)
         with open(output_path, 'rb') as input_file:
-            data = pickle.load(input_file)
+            data = pkl.load(input_file)
         a = 1
 
     @staticmethod

@@ -97,6 +97,11 @@ class TrafficGenerator:
     def get_start_end(self, mode, gaussians, option_idx, samples_num):
         if mode == 'cyclic':
             part_size = int(samples_num / 5)
+            lst1 = [gaussians['a1']] * part_size + [gaussians['b1']] * part_size + \
+                   [gaussians['c1']] * part_size + [gaussians['d1']] * part_size + \
+                   [gaussians['e1']]
+
+
             if option_idx % 2 == 0:
                 start_end_lst = [(gaussians['a1'], gaussians['a2'])] * part_size +\
                                  [(gaussians['b1'], gaussians['b2'])] * part_size +\

@@ -1,7 +1,6 @@
 import numpy as np
 import os
 import matplotlib.pyplot as plt
-import imageio
 import pickle as pkl
 
 from agents.staticagent import StaticAgent
@@ -18,37 +17,45 @@ import itertools as it
 
 class GeneticAlgorithmAgent(StaticAgent):
     BASE_NUMBER = 2
-    INITIAL_POPULATION_SIZE: int = 300
+    INITIAL_POPULATION_SIZE: int = 500
     SIMULATION_DAYS_NUM = 4
     SELECTION_PERCENTILE = 90
     DECAY_FACTOR = 0.9
     MUTATION_FACTOR = 0.8
     NOISE_FACTOR = 0.20
+    UNUSED_SCOOTERS_FACTOR = 5
 
-    def __init__(self, agent_info: AgentInfo):
+    def __init__(self, agent_info: AgentInfo, model_dir):
         super(GeneticAlgorithmAgent, self).__init__(agent_info)
+        self.model_dir = os.path.join('models', model_dir)
         self._initial_scooters_locations: Map = \
             TrafficGenerator.get_random_end_day_scooters_locations(self.agent_info.scooters_num)
         self._pop: np.ndarray = self._generate_population(
             GeneticAlgorithmAgent.INITIAL_POPULATION_SIZE)
 
-    def spread_scooters(self, dump=False) -> Tuple[List[NestAllocation], float]:
+    def spread_scooters(self, dump=True) -> Tuple[List[NestAllocation], float]:
         generation = 0
-        log = dict()
+        log = {'generations': {}}
+        total_money = []
         while self._pop.shape[0] > 1:
             generation += 1
             print(f"Simulating generation: {generation}, population: {len(self._pop)}")
-            fitness_vals: List[float] = []
+            fitness_vals, money_vals = [], []
             generation_log = list()
             for ind in self._pop:
-                income, expense, unused = self._simulate_individual(ind)
+                income, expense, unused, nest_spread, rides_completed = self._simulate_individual(ind)
                 fitness_vals.append(income - expense - unused)
-                generation_log.append((income, expense, unused))
-            log[generation] = generation_log
+                money_vals.append(income - expense)
+                generation_log.append({'income': income, 'expense': expense, 'unused': unused,
+                                       'nest_spread': nest_spread, 'rides_completed': rides_completed})
+            log['generations'][generation] = generation_log
             best_fit = np.argmax(fitness_vals)
             print(f'Avg {round(np.average(fitness_vals), 2)} '
                   f'Max fit: {round(fitness_vals[best_fit], 2)}\n'
+                  f'Avg money {round(np.average(money_vals), 2)} '
+                  f'Max money: {round(money_vals[best_fit], 2)}\n'
                   f'Argmax: {self._pop[np.argmax(fitness_vals)]}')
+            total_money.append(money_vals[best_fit])
             parents: np.ndarray = self._fit(fitness_vals)
             offspring: np.ndarray = self._crossover(parents)
             offspring = self._mutate(offspring)
@@ -56,8 +63,14 @@ class GeneticAlgorithmAgent(StaticAgent):
         # the population size is 1
         the_chosen_one = self._pop[0]
         if dump:
-            with open('genetic.pkl', 'wb') as f:
+            log['total_money'] = total_money
+            log['nest_locations'] = self.agent_info.optional_nests
+            if not os.path.isdir(self.model_dir):
+                os.mkdir(self.model_dir)
+            with open(os.path.join(self.model_dir, 'genetic.pkl'), 'wb') as f:
                 pkl.dump(log, f)
+            with open(os.path.join(self.model_dir, 'genetic.pkl'), 'rb') as f:
+                a = pkl.load(f)
         return self._get_nests_spread(the_chosen_one), self._simulate_individual(the_chosen_one)
 
     def _fit(self, fitness_vals):
@@ -90,7 +103,9 @@ class GeneticAlgorithmAgent(StaticAgent):
         return offspring
 
     def _generate_population(self, pop_size: int) -> np.ndarray:
-        return softmax(np.random.random((pop_size, len(self.agent_info.optional_nests))), axis=-1)
+        population = np.power(np.random.random((pop_size, len(self.agent_info.optional_nests))), 30)
+        population /= np.expand_dims(np.sum(population, axis=1), axis=-1)
+        return population
 
 
     def _get_nests_spread(self, ind: np.ndarray) -> List[NestAllocation]:
@@ -112,7 +127,7 @@ class GeneticAlgorithmAgent(StaticAgent):
                 traffic_simulator.get_simulation_result(ind_nests_locations)
             rides_completed: List[Ride] = result[0]
             next_day_locations: Map = result[1]
-            unused_scooters = (self.agent_info.scooters_num - len(rides_completed))
+            unused_scooters = (self.agent_info.scooters_num - len(rides_completed)) * self.UNUSED_SCOOTERS_FACTOR
             # compute revenue
             cur_revenue = self.agent_info.incomes_expenses.calculate_revenue(
                 rides_completed, prev_scooters_locations, ind_nests_locations)
@@ -120,7 +135,7 @@ class GeneticAlgorithmAgent(StaticAgent):
             expense.append(cur_revenue[1])
             unused.append(unused_scooters)
             prev_scooters_locations = next_day_locations
-        return np.mean(income), np.mean(expense), np.mean(unused)
+        return np.mean(income), np.mean(expense), np.mean(unused), ind_nests_spread, rides_completed
 
     def _reproduce(self, parent1, parent2) -> np.ndarray:
         # todo attempt 1: half of coordinates from each parent
@@ -144,6 +159,7 @@ class GeneticAlgorithmAgent(StaticAgent):
         # normalize
         noisy_offspring = noisy_offspring / noisy_offspring.sum(axis=-1)[:, None]
         return noisy_offspring
+
     def discretize(self, action_data: np.ndarray) -> np.ndarray:
         data = action_data.copy()
         assert np.isclose(np.sum(data), 1)
