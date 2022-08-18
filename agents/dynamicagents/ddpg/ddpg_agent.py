@@ -315,13 +315,15 @@ class DdpgAgent(ReinforcementLearningAgent, DynamicAgent):
         if pretrain_critic:
             random_critic_loss, random_rewards, random_critic_values, random_actor_loss = [], [], [], []
             random_game_len = 20
-            for i in range(200):
+            for i in range(400):
                 scooters_locations: Map
                 state: np.ndarray
                 scooters_locations, state = self.get_start_state()
                 random_cur_game_critic_loss = []
                 for step_idx in range(random_game_len):
                     action = np.random.random((self.n_actions,))
+                    power = np.random.randint(30)
+                    action = np.power(action, power)
                     action = action / np.sum(action)
                     # action = np.array([0.5, 0.5, 0, 0])
                     prev_nests_spread: List[NestAllocation]
